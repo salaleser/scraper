@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"log"
 	"strings"
+
+	"github.com/salaleser/scraper/model"
 )
 
 // App contains application
@@ -22,21 +24,21 @@ type Metadata struct { // TODO add more fields
 }
 
 // ParseAsIDsBody parses applications by keyword
-func ParseAsIDsBody(body []byte, count int) []AsResultModel {
-	var data AsAppsModel
+func ParseAsIDsBody(body []byte, count int) []model.AsResultModel {
+	var data model.AsAppsModel
 	if err := json.Unmarshal(body, &data); err != nil {
 		log.Printf("Error while trying to unmarshal (234): %q", err.Error())
-		return []AsResultModel{} // TODO handle error
+		return []model.AsResultModel{} // TODO handle error
 	}
 
 	results := data.StorePlatformData.NativeSearchLockup.Results.(map[string]interface{})
 
-	apps := make([]AsResultModel, 0)
+	apps := make([]model.AsResultModel, 0)
 	for k, v := range results {
 		result := v.(map[string]interface{})
 
 		if result["kind"].(string) == "iosSoftware" {
-			apps = append(apps, AsResultModel{
+			apps = append(apps, model.AsResultModel{
 				Name: result["name"].(string),
 				ID:   k,
 			})
@@ -48,7 +50,7 @@ func ParseAsIDsBody(body []byte, count int) []AsResultModel {
 
 // ParseAsAsoBody parses response body and returns ASO
 func ParseAsAsoBody(body []byte) Metadata {
-	var data AsAppModel
+	var data model.AsAppModel
 	if err := json.Unmarshal(body, &data); err != nil {
 		log.Printf("Error while trying to unmarshal (1): %q", err.Error())
 		return Metadata{} // TODO handle error
