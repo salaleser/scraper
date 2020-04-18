@@ -1,4 +1,4 @@
-package http
+package scraper
 
 import (
 	"fmt"

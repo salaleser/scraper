@@ -1,4 +1,4 @@
-package model
+package scraper
 
 type Screenshots []struct {
 	Width                int    `json:"width"`
