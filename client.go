@@ -9,7 +9,7 @@ import (
 )
 
 // AsAppIDs returns application IDs by keyword
-func AsAppIDs(keyword string, location string, language string) []byte {
+func AsAppIDs(keyword string, location string, language string) []AsResultModel {
 	const baseURL = "https://search.itunes.apple.com/WebObjects/MZStore.woa/wa/search"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
@@ -43,7 +43,7 @@ func AsAppIDs(keyword string, location string, language string) []byte {
 		fmt.Fprintf(os.Stderr, "reading as response body: %v\n", err)
 	}
 
-	return body[:]
+	return ParseAsIDsBody(body[:])
 }
 
 // AsSuggestions returns suggestions by keyword
@@ -85,7 +85,7 @@ func AsSuggestions(keyword string, location string, language string) []byte {
 }
 
 // GetAsMetadataBody returns body
-func GetAsMetadataBody(appID string, location string, language string) []byte {
+func GetAsMetadataBody(appID string, location string, language string) Metadata {
 	const baseURLpart = "https://apps.apple.com/ru/app/id"
 	uri, err := url.Parse(baseURLpart + appID)
 	if err != nil {
@@ -115,11 +115,11 @@ func GetAsMetadataBody(appID string, location string, language string) []byte {
 		fmt.Fprintf(os.Stderr, "reading as response body: %v\n", err)
 	}
 
-	return body[:]
+	return ParseAsMetadataBody(body[:])
 }
 
 // GpAppIDs returns application IDs by keyword
-func GpAppIDs(keyword string, location string, language string) []byte {
+func GpAppIDs(keyword string, location string, language string) []App {
 	const baseURL = "https://play.google.com/_/PlayStoreUi/data/batchexecute"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
@@ -150,11 +150,11 @@ func GpAppIDs(keyword string, location string, language string) []byte {
 		fmt.Fprintf(os.Stderr, "reading gp resopnse body: %v\n", err)
 	}
 
-	return body[5:]
+	return ParseGpIDsBody(body[5:])
 }
 
 // GetGpMetadataBody returns body
-func GetGpMetadataBody(appID string, location string, language string) []byte {
+func GetGpMetadataBody(appID string, location string, language string) Metadata {
 	const baseURL = "https://play.google.com/_/PlayStoreUi/data/batchexecute"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
@@ -191,5 +191,5 @@ func GetGpMetadataBody(appID string, location string, language string) []byte {
 		fmt.Fprintf(os.Stderr, "reading gp response body: %v\n", err)
 	}
 
-	return body[5:]
+	return ParseAsMetadataBody(body[5:])
 }

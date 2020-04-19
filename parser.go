@@ -22,7 +22,7 @@ type Metadata struct { // TODO add more fields
 }
 
 // ParseAsIDsBody parses applications by keyword
-func ParseAsIDsBody(body []byte, count int) []AsResultModel {
+func ParseAsIDsBody(body []byte) []AsResultModel {
 	var data AsAppsModel
 	if err := json.Unmarshal(body, &data); err != nil {
 		log.Printf("Error while trying to unmarshal (234): %q", err.Error())
@@ -46,8 +46,8 @@ func ParseAsIDsBody(body []byte, count int) []AsResultModel {
 	return apps
 }
 
-// ParseAsAsoBody parses response body and returns ASO
-func ParseAsAsoBody(body []byte) Metadata {
+// ParseAsMetadataBody parses response body and returns Metadata
+func ParseAsMetadataBody(body []byte) Metadata {
 	var data AsAppModel
 	if err := json.Unmarshal(body, &data); err != nil {
 		log.Printf("Error while trying to unmarshal (1): %q", err.Error())
@@ -84,7 +84,7 @@ func ParseAsAsoBody(body []byte) Metadata {
 }
 
 // ParseGpIDsBody parses applications by keyword
-func ParseGpIDsBody(body []byte, count int) []App {
+func ParseGpIDsBody(body []byte) []App {
 	var data1 [][]interface{}
 	if err := json.Unmarshal(body, &data1); err != nil {
 		log.Printf("Error while trying to unmarshal (1): %q", err.Error())
@@ -119,8 +119,8 @@ func ParseGpIDsBody(body []byte, count int) []App {
 		return []App{}
 	}
 
-	appIDs := make([]App, count)
-	for i := 0; i < count; i++ {
+	appIDs := make([]App, 5)
+	for i := 0; i < 5; i++ {
 		appIDs[i] = App{
 			Title: data2[0].([]interface{})[1].([]interface{})[0].([]interface{})[0].([]interface{})[0].([]interface{})[i].([]interface{})[2].(string),
 			AppID: data2[0].([]interface{})[1].([]interface{})[0].([]interface{})[0].([]interface{})[0].([]interface{})[i].([]interface{})[12].([]interface{})[0].(string),
@@ -130,8 +130,8 @@ func ParseGpIDsBody(body []byte, count int) []App {
 	return appIDs
 }
 
-// ParseGpAsoBody parses response body and returns Metadata
-func ParseGpAsoBody(body []byte) Metadata {
+// ParseGpMetadataBody parses response body and returns Metadata
+func ParseGpMetadataBody(body []byte) Metadata {
 	var data1 [][]interface{}
 	if err := json.Unmarshal(body, &data1); err != nil {
 		log.Printf("Error while trying to unmarshal (1): %q", err.Error())
