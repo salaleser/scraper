@@ -21,8 +21,7 @@ type Metadata struct { // TODO add more fields
 	Logo        string
 }
 
-// ParseAsIDsBody parses applications by keyword
-func ParseAsIDsBody(body []byte) []AsResultModel {
+func parseAsIDsBody(body []byte) []AsResultModel {
 	var data AsAppsModel
 	if err := json.Unmarshal(body, &data); err != nil {
 		log.Printf("Error while trying to unmarshal (234): %q", err.Error())
@@ -46,8 +45,7 @@ func ParseAsIDsBody(body []byte) []AsResultModel {
 	return apps
 }
 
-// ParseAsMetadataBody parses response body and returns Metadata
-func ParseAsMetadataBody(body []byte) Metadata {
+func parseAsMetadataBody(body []byte) Metadata {
 	var data AsAppModel
 	if err := json.Unmarshal(body, &data); err != nil {
 		log.Printf("Error while trying to unmarshal (1): %q", err.Error())
@@ -83,8 +81,7 @@ func ParseAsMetadataBody(body []byte) Metadata {
 	return metadata
 }
 
-// ParseGpIDsBody parses applications by keyword
-func ParseGpIDsBody(body []byte) []App {
+func parseGpIDsBody(body []byte) []App {
 	var data1 [][]interface{}
 	if err := json.Unmarshal(body, &data1); err != nil {
 		log.Printf("Error while trying to unmarshal (1): %q", err.Error())
@@ -94,12 +91,12 @@ func ParseGpIDsBody(body []byte) []App {
 	d := data1[0]
 
 	if d[0] != "wrb.fr" {
-		log.Printf("The first ASO section element isn't \"wrb.fr\" (%q).", d[0])
+		log.Printf("The first metadata section element isn't \"wrb.fr\" (%q).", d[0])
 		return []App{} // TODO handle error
 	}
 
 	if d[1] != "lGYRle" {
-		log.Printf("The second ASO section element isn't \"lGYRle\" (%q).", d[0])
+		log.Printf("The second metadata section element isn't \"lGYRle\" (%q).", d[0])
 		return []App{} // TODO handle error
 	}
 
@@ -130,8 +127,7 @@ func ParseGpIDsBody(body []byte) []App {
 	return appIDs
 }
 
-// ParseGpMetadataBody parses response body and returns Metadata
-func ParseGpMetadataBody(body []byte) Metadata {
+func parseGpMetadataBody(body []byte) Metadata {
 	var data1 [][]interface{}
 	if err := json.Unmarshal(body, &data1); err != nil {
 		log.Printf("Error while trying to unmarshal (1): %q", err.Error())
@@ -141,12 +137,12 @@ func ParseGpMetadataBody(body []byte) Metadata {
 	d := data1[0]
 
 	if d[0] != "wrb.fr" {
-		log.Printf("The first ASO section element isn't \"wrb.fr\" (%q).", d[0])
+		log.Printf("The first metadata section element isn't \"wrb.fr\" (%q).", d[0])
 		return Metadata{} // TODO handle error
 	}
 
 	if d[1] != "jLZZ2e" {
-		log.Printf("The second ASO section element isn't \"jLZZ2e\" (%q).", d[0])
+		log.Printf("The second metadata section element isn't \"jLZZ2e\" (%q).", d[0])
 		return Metadata{} // TODO handle error
 	}
 

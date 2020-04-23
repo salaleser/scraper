@@ -43,7 +43,7 @@ func AsAppIDs(keyword string, location string, language string) []AsResultModel 
 		fmt.Fprintf(os.Stderr, "reading as response body: %v\n", err)
 	}
 
-	return ParseAsIDsBody(body[:])
+	return parseAsIDsBody(body[:])
 }
 
 // AsSuggestions returns suggestions by keyword
@@ -84,8 +84,8 @@ func AsSuggestions(keyword string, location string, language string) []byte {
 	return body[:]
 }
 
-// GetAsMetadataBody returns body
-func GetAsMetadataBody(appID string, location string, language string) Metadata {
+// AsMetadataBody returns body
+func AsMetadataBody(appID string, location string, language string) Metadata {
 	const baseURLpart = "https://apps.apple.com/ru/app/id"
 	uri, err := url.Parse(baseURLpart + appID)
 	if err != nil {
@@ -115,7 +115,7 @@ func GetAsMetadataBody(appID string, location string, language string) Metadata 
 		fmt.Fprintf(os.Stderr, "reading as response body: %v\n", err)
 	}
 
-	return ParseAsMetadataBody(body[:])
+	return parseAsMetadataBody(body[:])
 }
 
 // GpAppIDs returns application IDs by keyword
@@ -150,11 +150,11 @@ func GpAppIDs(keyword string, location string, language string) []App {
 		fmt.Fprintf(os.Stderr, "reading gp resopnse body: %v\n", err)
 	}
 
-	return ParseGpIDsBody(body[5:])
+	return parseGpIDsBody(body[5:])
 }
 
-// GetGpMetadataBody returns body
-func GetGpMetadataBody(appID string, location string, language string) Metadata {
+// GpMetadataBody returns body
+func GpMetadataBody(appID string, location string, language string) Metadata {
 	const baseURL = "https://play.google.com/_/PlayStoreUi/data/batchexecute"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
@@ -191,5 +191,5 @@ func GetGpMetadataBody(appID string, location string, language string) Metadata 
 		fmt.Fprintf(os.Stderr, "reading gp response body: %v\n", err)
 	}
 
-	return ParseAsMetadataBody(body[5:])
+	return parseGpMetadataBody(body[5:])
 }
