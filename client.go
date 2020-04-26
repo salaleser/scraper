@@ -8,42 +8,38 @@ import (
 	"os"
 )
 
-// AsAppIDs returns application IDs by keyword
-func AsAppIDs(keyword string, location string, language string) []AsResultModel {
-	const baseURL = "https://search.itunes.apple.com/WebObjects/MZStore.woa/wa/search"
+func AsStory(location string, language string) FeaturedStory {
+	const baseURL = "http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewToday"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "parsing as url: %v\n", err)
+		fmt.Fprintf(os.Stderr, "parsing as today url: %v\n", err)
 	}
 
 	query, _ := url.ParseQuery(uri.RawQuery)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "parsing as query: %v\n", err)
+		fmt.Fprintf(os.Stderr, "parsing as today query: %v\n", err)
 	}
-	query.Add("clientApplication", "Software")
-	query.Add("caller", "com.apple.AppStore")
-	query.Add("version", "1")
-	query.Add("term", keyword)
+	query.Add("cc", location)
 	uri.RawQuery = query.Encode()
 
 	req, err := http.NewRequest("GET", uri.String(), nil)
 	req.Header.Add("x-apple-store-front", "143469-16,29 t:apps3")                                                // TODO учесть другие страны
 	req.Header.Add("user-agent", "AppStore/3.0 iOS/11.1.1 model/iPhone6,2 hwp/s5l8960x build/15B150 (6; dt:90)") // TODO
 	req.Header.Add("x-apple-i-timezone", "GMT+3")                                                                // TODO
-	req.Header.Add("Host", "search.itunes.apple.com")                                                            // TODO
+	req.Header.Add("Host", "itunes.apple.com")                                                                   // TODO
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "app store request: %v\n", err)
+		fmt.Fprintf(os.Stderr, "app store today request: %v\n", err)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "reading as response body: %v\n", err)
+		fmt.Fprintf(os.Stderr, "reading as today response body: %v\n", err)
 	}
 
-	return parseAsIDsBody(body[:])
+	return parseAsStory(body[:])
 }
 
 // AsSuggestions returns suggestions by keyword
@@ -84,6 +80,44 @@ func AsSuggestions(keyword string, location string, language string) []byte {
 	return body[:]
 }
 
+// AsAppIDs returns application IDs by keyword
+func AsAppIDs(keyword string, location string, language string) []Metadata {
+	const baseURL = "https://search.itunes.apple.com/WebObjects/MZStore.woa/wa/search"
+	uri, err := url.Parse(baseURL)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "parsing as url: %v\n", err)
+	}
+
+	query, _ := url.ParseQuery(uri.RawQuery)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "parsing as query: %v\n", err)
+	}
+	query.Add("clientApplication", "Software")
+	query.Add("caller", "com.apple.AppStore")
+	query.Add("version", "1")
+	query.Add("term", keyword)
+	uri.RawQuery = query.Encode()
+
+	req, err := http.NewRequest("GET", uri.String(), nil)
+	req.Header.Add("x-apple-store-front", "143469-16,29 t:apps3")                                                // TODO учесть другие страны
+	req.Header.Add("user-agent", "AppStore/3.0 iOS/11.1.1 model/iPhone6,2 hwp/s5l8960x build/15B150 (6; dt:90)") // TODO
+	req.Header.Add("x-apple-i-timezone", "GMT+3")                                                                // TODO
+	req.Header.Add("Host", "search.itunes.apple.com")                                                            // TODO
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "app store request: %v\n", err)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "reading as response body: %v\n", err)
+	}
+
+	return parseAsIDsBody(body[:])
+}
+
 // AsMetadataBody returns body
 func AsMetadataBody(appID string, location string, language string) Metadata {
 	const baseURLpart = "https://apps.apple.com/ru/app/id"
@@ -119,7 +153,7 @@ func AsMetadataBody(appID string, location string, language string) Metadata {
 }
 
 // GpAppIDs returns application IDs by keyword
-func GpAppIDs(keyword string, location string, language string) []App {
+func GpAppIDs(keyword string, location string, language string) []Metadata {
 	const baseURL = "https://play.google.com/_/PlayStoreUi/data/batchexecute"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
