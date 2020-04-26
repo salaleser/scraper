@@ -19,19 +19,19 @@ type Metadata struct { // TODO add more fields
 	Logo        string
 }
 
-type FeaturedStory struct {
-	Canvas           Canvas           `json:"canvas"`
-	Label            string           `json:"label"`
-	ID               string           `json:"id"`
-	CardIds          []string         `json:"cardIds"`
-	RelatedContent   RelatedContent   `json:"relatedContent"`
-	EditorialArtwork EditorialArtwork `json:"editorialArtwork"`
-	Kind             string           `json:"kind"`
-	Link             Link             `json:"link"`
-	DisplayStyle     string           `json:"displayStyle"`
-	EditorialNotes   EditorialNotes   `json:"editorialNotes"`
-	CardDisplayStyle string           `json:"cardDisplayStyle"`
-	DisplaySubStyle  string           `json:"displaySubStyle"`
+type StoryResponse struct {
+	Canvas           Canvas
+	Label            string
+	ID               string
+	CardIds          []string
+	RelatedContent   map[string]Result
+	EditorialArtwork EditorialArtwork
+	Kind             string
+	Link             Link
+	DisplayStyle     string
+	EditorialNotes   EditorialNotes
+	CardDisplayStyle string
+	DisplaySubStyle  string
 }
 
 func parseAsIDsBody(body []byte) []Metadata {
@@ -41,31 +41,18 @@ func parseAsIDsBody(body []byte) []Metadata {
 		return []Metadata{} // TODO handle error
 	}
 
-	results := data.StorePlatformData.NativeSearchLockup.Results.(map[string]interface{})
-
 	metadatas := make([]Metadata, 0)
-	for _, v := range results {
-		data, err := json.Marshal(v)
-		if err != nil {
-			log.Printf("Error while trying to marshal as IDs (235): %q", err.Error())
-			return []Metadata{} // TODO handle error
+	for _, result := range data.StorePlatformData.NativeSearchLockup.Results {
+		if result.Kind != "iosSoftware" {
+			continue
 		}
 
-		var result Result
-		if err := json.Unmarshal(data, &result); err != nil {
-			log.Printf("Error while trying to unmarshal as IDs (234): %q", err.Error())
-			return []Metadata{} // TODO handle error
+		metadata := Metadata{
+			Title: result.Name,
+			AppID: result.ID,
 		}
 
-		if result.Kind == "iosSoftware" {
-			metadatas := make([]Metadata, 5)
-			for i := 0; i < 5; i++ {
-				metadatas[i] = Metadata{
-					Title: result.Name,
-					AppID: result.ID,
-				}
-			}
-		}
+		metadatas = append(metadatas, metadata)
 	}
 
 	return metadatas
@@ -78,38 +65,15 @@ func parseAsMetadataBody(body []byte) Metadata {
 		return Metadata{} // TODO handle error
 	}
 
-	results := data.StorePlatformData.ProductDv.Results.(map[string]interface{})
-
 	var metadata Metadata
-	for _, v := range results {
-		data, err := json.Marshal(v)
-		if err != nil {
-			log.Printf("Error while trying to marshal as IDs (235): %q", err.Error())
-			return Metadata{} // TODO handle error
-		}
-
-		var result Result
-		if err := json.Unmarshal(data, &result); err != nil {
-			log.Printf("Error while trying to unmarshal as IDs (234): %q", err.Error())
-			return Metadata{} // TODO handle error
-		}
-
-		screenshotsData, err := json.Marshal(result.ScreenshotsByType)
-		if err != nil {
-			log.Printf("Error while trying to marshal as IDs (235): %q", err.Error())
-			return Metadata{} // TODO handle error
-		}
-
-		var screenshotsByTypeElement ScreenshotsByTypeElement
-		if err := json.Unmarshal(screenshotsData, &screenshotsByTypeElement); err != nil {
-			log.Printf("Error while trying to unmarshal as IDs (234): %q", err.Error())
-			return Metadata{} // TODO handle error
-		}
-
+	for _, result := range data.StorePlatformData.ProductDv.Results {
 		var screenshot1 string
-		for _, screenshots := range screenshotsByTypeElement.Screenshots {
-			screenshot1 = strings.Replace(screenshots.URL, "{w}x{h}bb.{f}", "512x512bb.png", -1)
-			break
+		for _, screenshots := range result.ScreenshotsByType {
+			if len(screenshots) == 0 {
+				continue
+			}
+
+			screenshot1 = strings.Replace(screenshots[0].URL, "{w}x{h}bb.{f}", "512x512bb.png", -1)
 		}
 
 		metadata = Metadata{
@@ -163,12 +127,15 @@ func parseGpIDsBody(body []byte) []Metadata {
 		return []Metadata{}
 	}
 
+	// FIXME может выйти за пределы массива
 	metadatas := make([]Metadata, 5)
 	for i := 0; i < 5; i++ {
-		metadatas[i] = Metadata{
+		metadata := Metadata{
 			Title: data2[0].([]interface{})[1].([]interface{})[0].([]interface{})[0].([]interface{})[0].([]interface{})[i].([]interface{})[2].(string),
 			AppID: data2[0].([]interface{})[1].([]interface{})[0].([]interface{})[0].([]interface{})[0].([]interface{})[i].([]interface{})[12].([]interface{})[0].(string),
 		}
+
+		metadatas = append(metadatas, metadata)
 	}
 
 	return metadatas
@@ -205,15 +172,10 @@ func parseGpMetadataBody(body []byte) Metadata {
 	}
 
 	return Metadata{
-		// AppID:       result.ID,
-		// ArtistName:  result.ArtistName,
-		// Rating:      result.UserRating.AriaLabelForRatings,
-		// ReleaseDate: result.ReleaseDate,
-		// Title:       result.Name,
-		// Subtitle:    result.Subtitle,
-		// Description: result.Description.Standard,
-		// Screenshot1: screenshot1,
-		// Logo:        strings.Replace(result.Artwork.URL, "{w}x{h}bb.{f}", "128x128bb.png", -1),
+		// AppID: appID,
+		ArtistName: data2[0][12][5].([]interface{})[1].(string),
+		// ReleaseDate: data2[0][6][0][1].(float32),
+		// Rating:      data2[0][0][0].(string),
 		Title:       data2[0][0][0].(string),
 		Subtitle:    data2[0][10][1].([]interface{})[1].(string),
 		Description: data2[0][10][0].([]interface{})[1].(string),
@@ -222,14 +184,31 @@ func parseGpMetadataBody(body []byte) Metadata {
 	}
 }
 
-func parseAsStory(body []byte) FeaturedStory {
-	var data Story
+func parseAsStory(body []byte) StoryResponse {
+	var data Page
 	if err := json.Unmarshal(body, &data); err != nil {
 		log.Printf("Error while trying to unmarshal as story (1): %q", err.Error())
-		return FeaturedStory{} // TODO handle error
+		return StoryResponse{} // TODO handle error
 	}
 
-	story := FeaturedStory{}
+	var result Result
+	for _, v := range data.StorePlatformData.EditorialItemProduct.Results {
+		result = v
+		break
+	}
 
-	return story
+	return StoryResponse{
+		Canvas:           result.Canvas,
+		Label:            result.Label,
+		ID:               result.ID,
+		CardIds:          result.CardIds,
+		RelatedContent:   result.RelatedContent,
+		EditorialArtwork: result.EditorialArtwork,
+		Kind:             result.Kind,
+		Link:             result.Link,
+		DisplayStyle:     result.DisplayStyle,
+		EditorialNotes:   result.EditorialNotes,
+		CardDisplayStyle: result.CardDisplayStyle,
+		DisplaySubStyle:  result.DisplaySubStyle,
+	}
 }

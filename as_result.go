@@ -34,9 +34,9 @@ type Result struct {
 	Offers                 Offers                 `json:"offers"`
 	OvalArtwork            Artwork                `json:"ovalArtwork"`
 	ReleaseDate            string                 `json:"releaseDate"`
-	RelatedContent         RelatedContent         `json:"relatedContent"`
+	RelatedContent         map[string]Result      `json:"relatedContent"`
 	RequiredCapabilities   string                 `json:"requiredCapabilities"`
-	ScreenshotsByType      interface{}            `json:"screenshotsByType"`
+	ScreenshotsByType      map[string][]Artwork   `json:"screenshotsByType"`
 	ShortURL               string                 `json:"shortUrl"`
 	Subtitle               string                 `json:"subtitle"`
 	URL                    string                 `json:"url"`

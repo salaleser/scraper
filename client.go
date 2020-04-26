@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-func AsStory(location string, language string) FeaturedStory {
+func AsStory(location string, language string) StoryResponse {
 	const baseURL = "http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewToday"
 	uri, err := url.Parse(baseURL)
 	if err != nil {

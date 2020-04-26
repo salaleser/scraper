@@ -1,15 +1,15 @@
 package scraper
 
 type StorePlatformData struct {
-	ProductDv            StorePlatformDataType `json:"product-dv"`
-	NativeSearchLockup   StorePlatformDataType `json:"native-search-lockup"`
-	Lockup               StorePlatformDataType `json:"lockup"`
-	EditorialItemProduct StorePlatformDataType `json:"editorial-item-product"`
+	ProductDv            StorePlatformDataObject `json:"product-dv"`
+	NativeSearchLockup   StorePlatformDataObject `json:"native-search-lockup"`
+	Lockup               StorePlatformDataObject `json:"lockup"`
+	EditorialItemProduct StorePlatformDataObject `json:"editorial-item-product"`
 }
 
-type StorePlatformDataType struct {
-	Results         interface{} `json:"results"` // Application ID, Story ID
-	Version         int         `json:"version"`
-	IsAuthenticated bool        `json:"isAuthenticated"`
-	Meta            Meta        `json:"meta"`
+type StorePlatformDataObject struct {
+	Results         map[string]Result `json:"results"` // Application ID, Story ID
+	Version         int               `json:"version"`
+	IsAuthenticated bool              `json:"isAuthenticated"`
+	Meta            Meta              `json:"meta"`
 }
