@@ -2,16 +2,18 @@ package scraper
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"strings"
 )
 
-// Metadata contains application's metadata
-type Metadata struct { // TODO add more fields
+// MetadataResponse is a vitalina's Application's metadata structure.
+type MetadataResponse struct { // TODO add more fields
 	Title       string
+	Link        string
 	AppID       string
 	ArtistName  string
-	Rating      string
+	Rating      float32
 	ReleaseDate string
 	Subtitle    string
 	Description string
@@ -19,13 +21,14 @@ type Metadata struct { // TODO add more fields
 	Logo        string
 }
 
+// StoryResponse is a vitalina's Story structure.
 type StoryResponse struct {
 	Canvas           Canvas
 	Label            string
 	ID               string
 	CardIds          []string
 	RelatedContent   map[string]Result
-	EditorialArtwork EditorialArtwork
+	EditorialArtwork map[string]Artwork
 	Kind             string
 	Link             Link
 	DisplayStyle     string
@@ -34,22 +37,37 @@ type StoryResponse struct {
 	DisplaySubStyle  string
 }
 
-func parseAsIDsBody(body []byte) []Metadata {
+// RoomResponse is a vitalina's Room structure.
+type RoomResponse struct {
+	Title       string
+	Link        string
+	AppID       string
+	ArtistName  string
+	Rating      float32
+	ReleaseDate string
+	Subtitle    string
+	Description string
+	Screenshot1 string // TODO add array
+	Logo        string
+}
+
+func parseAsIDs(body []byte) []MetadataResponse {
 	var data Page
 	if err := json.Unmarshal(body, &data); err != nil {
 		log.Printf("Error while trying to unmarshal as IDs (234): %q", err.Error())
-		return []Metadata{} // TODO handle error
+		return []MetadataResponse{} // TODO handle error
 	}
 
-	metadatas := make([]Metadata, 0)
-	for _, result := range data.StorePlatformData.NativeSearchLockup.Results {
+	metadatas := make([]MetadataResponse, 0)
+	for _, result := range data.StorePlatformData["native-search-lockup"].Results {
 		if result.Kind != "iosSoftware" {
 			continue
 		}
 
-		metadata := Metadata{
-			Title: result.Name,
-			AppID: result.ID,
+		metadata := MetadataResponse{
+			Title:  result.Name,
+			AppID:  result.ID,
+			Rating: result.UserRating.Value,
 		}
 
 		metadatas = append(metadatas, metadata)
@@ -58,15 +76,15 @@ func parseAsIDsBody(body []byte) []Metadata {
 	return metadatas
 }
 
-func parseAsMetadataBody(body []byte) Metadata {
+func parseAsMetadata(body []byte) MetadataResponse {
 	var data Page
 	if err := json.Unmarshal(body, &data); err != nil {
 		log.Printf("Error while trying to unmarshal as metadata (1): %q", err.Error())
-		return Metadata{} // TODO handle error
+		return MetadataResponse{} // TODO handle error
 	}
 
-	var metadata Metadata
-	for _, result := range data.StorePlatformData.ProductDv.Results {
+	var metadata MetadataResponse
+	for _, result := range data.StorePlatformData["product-dv"].Results {
 		var screenshot1 string
 		for _, screenshots := range result.ScreenshotsByType {
 			if len(screenshots) == 0 {
@@ -76,10 +94,11 @@ func parseAsMetadataBody(body []byte) Metadata {
 			screenshot1 = strings.Replace(screenshots[0].URL, "{w}x{h}bb.{f}", "512x512bb.png", -1)
 		}
 
-		metadata = Metadata{
+		metadata = MetadataResponse{
 			AppID:       result.ID,
+			Link:        result.Link.URL,
 			ArtistName:  result.ArtistName,
-			Rating:      result.UserRating.AriaLabelForRatings,
+			Rating:      result.UserRating.Value,
 			ReleaseDate: result.ReleaseDate,
 			Title:       result.Name,
 			Subtitle:    result.Subtitle,
@@ -92,47 +111,126 @@ func parseAsMetadataBody(body []byte) Metadata {
 	return metadata
 }
 
-func parseGpIDsBody(body []byte) []Metadata {
+func parseAsRoom(body []byte) RoomResponse {
+	var data Page
+	if err := json.Unmarshal(body, &data); err != nil {
+		log.Printf("Error while trying to unmarshal as room (1): %q", err.Error())
+		return RoomResponse{} // TODO handle error
+	}
+
+	var room RoomResponse
+	for _, result := range data.StorePlatformData["lockup"].Results {
+		var screenshot1 string
+		for _, screenshots := range result.ScreenshotsByType {
+			if len(screenshots) == 0 {
+				continue
+			}
+
+			screenshot1 = strings.Replace(screenshots[0].URL, "{w}x{h}bb.{f}", "512x512bb.png", -1)
+		}
+
+		room = RoomResponse{
+			AppID:       result.ID,
+			Link:        result.Link.URL,
+			ArtistName:  result.ArtistName,
+			Rating:      result.UserRating.Value,
+			ReleaseDate: result.ReleaseDate,
+			Title:       result.Name,
+			Subtitle:    result.Subtitle,
+			Description: result.Description.Standard,
+			Screenshot1: screenshot1,
+			Logo:        strings.Replace(result.Artwork.URL, "{w}x{h}bb.{f}", "128x128bb.png", -1),
+		}
+	}
+
+	return room
+}
+
+func parseGpIDs(body []byte) []MetadataResponse {
 	var data1 [][]interface{}
 	if err := json.Unmarshal(body, &data1); err != nil {
 		log.Printf("Error while trying to unmarshal gp IDs (1): %q", err.Error())
-		return []Metadata{} // TODO handle error
+		return []MetadataResponse{} // TODO handle error
 	}
 
 	d := data1[0]
 
 	if d[0] != "wrb.fr" {
 		log.Printf("The first metadata section element isn't \"wrb.fr\" (%q).", d[0])
-		return []Metadata{} // TODO handle error
+		return []MetadataResponse{} // TODO handle error
 	}
 
 	if d[1] != "lGYRle" {
 		log.Printf("The second metadata section element isn't \"lGYRle\" (%q).", d[0])
-		return []Metadata{} // TODO handle error
+		return []MetadataResponse{} // TODO handle error
 	}
 
 	if d[2] == nil {
 		log.Printf("Error while parsing (386).")
-		return []Metadata{} // TODO handle error
+		return []MetadataResponse{} // TODO handle error
 	}
 
 	var data2 []interface{}
 	if err := json.Unmarshal([]byte(d[2].(string)), &data2); err != nil {
 		log.Printf("Error while trying to unmarshal gp IDs (2): %q", err.Error())
-		return []Metadata{} // TODO handle error
+		return []MetadataResponse{} // TODO handle error
+	}
+
+	i1 := data2[0].([]interface{})
+	if i1 == nil {
+		i1JSON, _ := json.Marshal(data2[0])
+		log.Printf("cast interface 1: %q", errors.New(string(i1JSON)))
+		return []MetadataResponse{} // TODO handle error
+	}
+
+	i1_1 := i1[1]
+	if i1_1 == nil {
+		i1_1JSON, _ := json.Marshal(i1)
+		log.Printf("cast interface 1.1: %q", errors.New(string(i1_1JSON)))
+		return []MetadataResponse{} // TODO handle error
+	}
+
+	i2 := i1_1.([]interface{})
+	if i2 == nil {
+		i2JSON, _ := json.Marshal(i1_1)
+		log.Printf("cast interface 2: %q", errors.New(string(i2JSON)))
+		return []MetadataResponse{} // TODO handle error
+	}
+
+	i3 := i2[0].([]interface{})
+	if i3 == nil {
+		i3JSON, _ := json.Marshal(i2)
+		log.Printf("cast interface 3: %q", errors.New(string(i3JSON)))
+		return []MetadataResponse{} // TODO handle error
+	}
+
+	i4 := i3[0].([]interface{})
+	if i4 == nil {
+		i4JSON, _ := json.Marshal(i3)
+		log.Printf("cast interface 4: %q", errors.New(string(i4JSON)))
+		return []MetadataResponse{} // TODO handle error
+	}
+
+	i5 := i4[0].([]interface{})
+	if i5 == nil {
+		i5JSON, _ := json.Marshal(i4)
+		log.Printf("cast interface 5: %q", errors.New(string(i5JSON)))
+		return []MetadataResponse{} // TODO handle error
 	}
 
 	// FIXME
-	if len(data2[0].([]interface{})[1].([]interface{})[0].([]interface{})[0].([]interface{})[0].([]interface{})) < 2 {
-		return []Metadata{}
+	if len(i5) < 2 {
+		log.Printf("len gp json array check: %q", errors.New("len < 2"))
+		return []MetadataResponse{}
 	}
 
-	// FIXME может выйти за пределы массива
-	metadatas := make([]Metadata, 5)
-	for i := 0; i < 5; i++ {
-		metadata := Metadata{
-			Title: data2[0].([]interface{})[1].([]interface{})[0].([]interface{})[0].([]interface{})[0].([]interface{})[i].([]interface{})[2].(string),
-			AppID: data2[0].([]interface{})[1].([]interface{})[0].([]interface{})[0].([]interface{})[0].([]interface{})[i].([]interface{})[12].([]interface{})[0].(string),
+	// FIXME interfaces
+	metadatas := make([]MetadataResponse, 0)
+	for _, d := range i5 {
+		metadata := MetadataResponse{
+			Title:  d.([]interface{})[2].(string),
+			AppID:  d.([]interface{})[12].([]interface{})[0].(string),
+			Rating: -1,
 		}
 
 		metadatas = append(metadatas, metadata)
@@ -141,37 +239,37 @@ func parseGpIDsBody(body []byte) []Metadata {
 	return metadatas
 }
 
-func parseGpMetadataBody(body []byte) Metadata {
+func parseGpMetadata(body []byte) MetadataResponse {
 	var data1 [][]interface{}
 	if err := json.Unmarshal(body, &data1); err != nil {
 		log.Printf("Error while trying to unmarshal gp metadata (1): %q", err.Error())
-		return Metadata{} // TODO handle error
+		return MetadataResponse{} // TODO handle error
 	}
 
 	d := data1[0]
 
 	if d[0] != "wrb.fr" {
 		log.Printf("The first metadata section element isn't \"wrb.fr\" (%q).", d[0])
-		return Metadata{} // TODO handle error
+		return MetadataResponse{} // TODO handle error
 	}
 
 	if d[1] != "jLZZ2e" {
 		log.Printf("The second metadata section element isn't \"jLZZ2e\" (%q).", d[0])
-		return Metadata{} // TODO handle error
+		return MetadataResponse{} // TODO handle error
 	}
 
 	if d[2] == nil {
 		log.Printf("Error while parsing (567).")
-		return Metadata{} // TODO handle error
+		return MetadataResponse{} // TODO handle error
 	}
 
 	var data2 [][][]interface{}
 	if err := json.Unmarshal([]byte(d[2].(string)), &data2); err != nil {
 		log.Printf("Error while trying to unmarshal gp metadata (2): %q", err.Error())
-		return Metadata{} // TODO handle error
+		return MetadataResponse{} // TODO handle error
 	}
 
-	return Metadata{
+	return MetadataResponse{
 		// AppID: appID,
 		ArtistName: data2[0][12][5].([]interface{})[1].(string),
 		// ReleaseDate: data2[0][6][0][1].(float32),
@@ -192,7 +290,7 @@ func parseAsStory(body []byte) StoryResponse {
 	}
 
 	var result Result
-	for _, v := range data.StorePlatformData.EditorialItemProduct.Results {
+	for _, v := range data.StorePlatformData["editorial-item-product"].Results {
 		result = v
 		break
 	}

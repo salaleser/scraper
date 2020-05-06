@@ -8,16 +8,17 @@ import (
 	"os"
 )
 
-func AsStory(location string, language string) StoryResponse {
-	const baseURL = "http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewToday"
-	uri, err := url.Parse(baseURL)
+// AsStory returns a Story by its ID.
+func AsStory(storyID string, location string, language string) StoryResponse {
+	const baseURL = "https://apps.apple.com/%s/story/id%s"
+	uri, err := url.Parse(fmt.Sprintf(baseURL, location, storyID))
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "parsing as today url: %v\n", err)
+		fmt.Fprintf(os.Stderr, "parsing as story url: %v\n", err)
 	}
 
 	query, _ := url.ParseQuery(uri.RawQuery)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "parsing as today query: %v\n", err)
+		fmt.Fprintf(os.Stderr, "parsing as story query: %v\n", err)
 	}
 	query.Add("cc", location)
 	uri.RawQuery = query.Encode()
@@ -31,18 +32,18 @@ func AsStory(location string, language string) StoryResponse {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "app store today request: %v\n", err)
+		fmt.Fprintf(os.Stderr, "app store story request: %v\n", err)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "reading as today response body: %v\n", err)
+		fmt.Fprintf(os.Stderr, "reading as story response body: %v\n", err)
 	}
 
 	return parseAsStory(body[:])
 }
 
-// AsSuggestions returns suggestions by keyword
+// AsSuggestions returns suggestions by a keyword.
 func AsSuggestions(keyword string, location string, language string) []byte {
 	const baseURL = "https://search.itunes.apple.com/WebObjects/MZSearchHints.woa/wa/hints"
 	uri, err := url.Parse(baseURL)
@@ -80,8 +81,45 @@ func AsSuggestions(keyword string, location string, language string) []byte {
 	return body[:]
 }
 
-// AsAppIDs returns application IDs by keyword
-func AsAppIDs(keyword string, location string, language string) []Metadata {
+// AsRoom returns a Room by its ID.
+func AsRoom(adamID string, location string, language string) RoomResponse {
+	const baseURL = "https://itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom"
+	uri, err := url.Parse(baseURL)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "parsing as room url: %v\n", err)
+	}
+
+	query, _ := url.ParseQuery(uri.RawQuery)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "parsing as room query: %v\n", err)
+	}
+	query.Add("fcId", adamID)
+	query.Add("genreIdString", "6014")
+	query.Add("mediaTypeString", "Mobile+Software+Applications")
+	uri.RawQuery = query.Encode()
+
+	req, err := http.NewRequest("GET", uri.String(), nil)
+	req.Header.Add("x-apple-store-front", "143469-16,29 t:apps3")                                                // TODO учесть другие страны
+	req.Header.Add("user-agent", "AppStore/3.0 iOS/11.1.1 model/iPhone6,2 hwp/s5l8960x build/15B150 (6; dt:90)") // TODO
+	req.Header.Add("x-apple-i-timezone", "GMT+3")                                                                // TODO
+	req.Header.Add("Host", "itunes.apple.com")                                                                   // TODO
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "app store room request: %v\n", err)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "reading as room response body: %v\n", err)
+	}
+
+	return parseAsRoom(body[:])
+}
+
+// AsAppIDs returns application IDs by a keyword.
+func AsAppIDs(keyword string, location string, language string) []MetadataResponse {
 	const baseURL = "https://search.itunes.apple.com/WebObjects/MZStore.woa/wa/search"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
@@ -115,11 +153,11 @@ func AsAppIDs(keyword string, location string, language string) []Metadata {
 		fmt.Fprintf(os.Stderr, "reading as response body: %v\n", err)
 	}
 
-	return parseAsIDsBody(body[:])
+	return parseAsIDs(body[:])
 }
 
-// AsMetadataBody returns body
-func AsMetadataBody(appID string, location string, language string) Metadata {
+// AsMetadata returns an Application's metadata by its ID.
+func AsMetadata(appID string, location string, language string) MetadataResponse {
 	const baseURLpart = "https://apps.apple.com/ru/app/id"
 	uri, err := url.Parse(baseURLpart + appID)
 	if err != nil {
@@ -149,11 +187,11 @@ func AsMetadataBody(appID string, location string, language string) Metadata {
 		fmt.Fprintf(os.Stderr, "reading as response body: %v\n", err)
 	}
 
-	return parseAsMetadataBody(body[:])
+	return parseAsMetadata(body[:])
 }
 
-// GpAppIDs returns application IDs by keyword
-func GpAppIDs(keyword string, location string, language string) []Metadata {
+// GpAppIDs returns application IDs by a keyword.
+func GpAppIDs(keyword string, location string, language string) []MetadataResponse {
 	const baseURL = "https://play.google.com/_/PlayStoreUi/data/batchexecute"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
@@ -184,11 +222,11 @@ func GpAppIDs(keyword string, location string, language string) []Metadata {
 		fmt.Fprintf(os.Stderr, "reading gp resopnse body: %v\n", err)
 	}
 
-	return parseGpIDsBody(body[5:])
+	return parseGpIDs(body[5:])
 }
 
-// GpMetadataBody returns body
-func GpMetadataBody(appID string, location string, language string) Metadata {
+// GpMetadata returns an Application's metadata by its ID.
+func GpMetadata(appID string, location string, language string) MetadataResponse {
 	const baseURL = "https://play.google.com/_/PlayStoreUi/data/batchexecute"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
@@ -225,5 +263,5 @@ func GpMetadataBody(appID string, location string, language string) Metadata {
 		fmt.Fprintf(os.Stderr, "reading gp response body: %v\n", err)
 	}
 
-	return parseGpMetadataBody(body[5:])
+	return parseGpMetadata(body[5:])
 }
