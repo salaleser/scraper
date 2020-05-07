@@ -1,5 +1,8 @@
 package scraper
 
+// Artwork contains image info.
+// Can be: subscriptionHero, brandLogo, originalFlowcaseBrick, storeFlowcase,
+// bannerUber, dayCard, mediaCard, generalCard, emailFeature.
 type Artwork struct {
 	Width                int    `json:"width"`
 	URL                  string `json:"url"`
