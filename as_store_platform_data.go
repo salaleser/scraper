@@ -1,7 +1,6 @@
 package scraper
 
-// StorePlatformData contains results and can be: product-dv,
-// native-search-lockup, lockup, editorial-item-product.
+// StorePlatformData contains results.
 type StorePlatformData struct {
 	Results         map[string]Result `json:"results"`
 	Version         int               `json:"version"`
