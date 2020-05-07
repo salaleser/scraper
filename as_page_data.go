@@ -2,7 +2,7 @@ package scraper
 
 type PageData struct {
 	AdamID                    int                       `json:"adamId"`
-	AdamIds                   []string                  `json:"adamIds"`
+	AdamIds                   []int                     `json:"adamIds"`
 	AllCategoriesLink         AllCategoriesLink         `json:"allCategoriesLink"`
 	AppRatingsLearnMoreURL    string                    `json:"appRatingsLearnMoreUrl"`
 	Bubbles                   Bubbles                   `json:"bubbles"`
