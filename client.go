@@ -8,6 +8,9 @@ import (
 	"os"
 )
 
+const asUserAgent = "AppStore/3.0 iOS/11.1.1 model/iPhone6,2 hwp/s5l8960x build/15B150 (6; dt:90)"
+const asStoreFront = "143469-16,29 t:apps3"
+
 // AsStory returns a Story by its ID.
 func AsStory(storyID string, location string, language string) StoryResponse {
 	const baseURL = "https://apps.apple.com/%s/story/id%s"
@@ -24,10 +27,10 @@ func AsStory(storyID string, location string, language string) StoryResponse {
 	uri.RawQuery = query.Encode()
 
 	req, err := http.NewRequest("GET", uri.String(), nil)
-	req.Header.Add("x-apple-store-front", "143469-16,29 t:apps3")                                                // TODO учесть другие страны
-	req.Header.Add("user-agent", "AppStore/3.0 iOS/11.1.1 model/iPhone6,2 hwp/s5l8960x build/15B150 (6; dt:90)") // TODO
-	req.Header.Add("x-apple-i-timezone", "GMT+3")                                                                // TODO
-	req.Header.Add("Host", "itunes.apple.com")                                                                   // TODO
+	req.Header.Add("x-apple-store-front", asStoreFront) // TODO учесть другие страны
+	req.Header.Add("user-agent", asUserAgent)           // TODO
+	req.Header.Add("x-apple-i-timezone", "GMT+3")       // TODO
+	req.Header.Add("Host", "itunes.apple.com")          // TODO
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -62,10 +65,10 @@ func AsSuggestions(keyword string, location string, language string) []byte {
 	uri.RawQuery = query.Encode()
 
 	req, err := http.NewRequest("GET", uri.String(), nil)
-	req.Header.Add("x-apple-store-front", "143469-16,29 t:apps3")                                                // TODO учесть другие страны
-	req.Header.Add("user-agent", "AppStore/3.0 iOS/11.1.1 model/iPhone6,2 hwp/s5l8960x build/15B150 (6; dt:90)") // TODO
-	req.Header.Add("x-apple-i-timezone", "GMT+3")                                                                // TODO
-	req.Header.Add("Host", "search.itunes.apple.com")                                                            // TODO
+	req.Header.Add("x-apple-store-front", asStoreFront) // TODO учесть другие страны
+	req.Header.Add("user-agent", asUserAgent)           // TODO
+	req.Header.Add("x-apple-i-timezone", "GMT+3")       // TODO
+	req.Header.Add("Host", "search.itunes.apple.com")   // TODO
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -94,15 +97,15 @@ func AsRoom(adamID string, location string, language string) RoomResponse {
 		fmt.Fprintf(os.Stderr, "parsing as room query: %v\n", err)
 	}
 	query.Add("fcId", adamID)
-	query.Add("genreIdString", "6014")
-	query.Add("mediaTypeString", "Mobile+Software+Applications")
+	// query.Add("genreIdString", "6014")                           // TODO изучить
+	// query.Add("mediaTypeString", "Mobile+Software+Applications") // TODO изучить
 	uri.RawQuery = query.Encode()
 
 	req, err := http.NewRequest("GET", uri.String(), nil)
-	req.Header.Add("x-apple-store-front", "143469-16,29 t:apps3")                                                // TODO учесть другие страны
-	req.Header.Add("user-agent", "AppStore/3.0 iOS/11.1.1 model/iPhone6,2 hwp/s5l8960x build/15B150 (6; dt:90)") // TODO
-	req.Header.Add("x-apple-i-timezone", "GMT+3")                                                                // TODO
-	req.Header.Add("Host", "itunes.apple.com")                                                                   // TODO
+	req.Header.Add("x-apple-store-front", asStoreFront) // TODO учесть другие страны
+	req.Header.Add("user-agent", asUserAgent)           // TODO
+	req.Header.Add("x-apple-i-timezone", "GMT+3")       // TODO
+	req.Header.Add("Host", "itunes.apple.com")          // TODO
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -137,10 +140,10 @@ func AsAppIDs(keyword string, location string, language string) []MetadataRespon
 	uri.RawQuery = query.Encode()
 
 	req, err := http.NewRequest("GET", uri.String(), nil)
-	req.Header.Add("x-apple-store-front", "143469-16,29 t:apps3")                                                // TODO учесть другие страны
-	req.Header.Add("user-agent", "AppStore/3.0 iOS/11.1.1 model/iPhone6,2 hwp/s5l8960x build/15B150 (6; dt:90)") // TODO
-	req.Header.Add("x-apple-i-timezone", "GMT+3")                                                                // TODO
-	req.Header.Add("Host", "search.itunes.apple.com")                                                            // TODO
+	req.Header.Add("x-apple-store-front", asStoreFront) // TODO учесть другие страны
+	req.Header.Add("user-agent", asUserAgent)           // TODO
+	req.Header.Add("x-apple-i-timezone", "GMT+3")       // TODO
+	req.Header.Add("Host", "search.itunes.apple.com")   // TODO
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -171,10 +174,10 @@ func AsMetadata(appID string, location string, language string) MetadataResponse
 	uri.RawQuery = query.Encode()
 
 	req, err := http.NewRequest("GET", uri.String(), nil)
-	req.Header.Add("x-apple-store-front", "143469-16,29 t:apps3")                                                // TODO учесть другие страны
-	req.Header.Add("user-agent", "AppStore/3.0 iOS/11.1.1 model/iPhone6,2 hwp/s5l8960x build/15B150 (6; dt:90)") // TODO
-	req.Header.Add("x-apple-i-timezone", "GMT+3")                                                                // TODO
-	req.Header.Add("Host", "apps.apple.com")                                                                     // TODO
+	req.Header.Add("x-apple-store-front", asStoreFront) // TODO учесть другие страны
+	req.Header.Add("user-agent", asUserAgent)           // TODO
+	req.Header.Add("x-apple-i-timezone", "GMT+3")       // TODO
+	req.Header.Add("Host", "apps.apple.com")            // TODO
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
