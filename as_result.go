@@ -1,8 +1,6 @@
 package scraper
 
-// Result contains an Application structure or a Story structure.
-// EditorialArtwork can be: subscriptionHero, brandLogo, originalFlowcaseBrick,
-// storeFlowcase, bannerUber, dayCard, mediaCard, generalCard.
+// Result contains an Application (Story, Room) structure.
 type Result struct {
 	ArtistID                               string                   `json:"artistId"`
 	ArtistName                             string                   `json:"artistName"`
@@ -21,6 +19,7 @@ type Result struct {
 	DisplayStyle                           string                   `json:"displayStyle"`
 	DisplaySubStyle                        string                   `json:"displaySubStyle"`
 	EditorialArtwork                       map[string]Artwork       `json:"editorialArtwork"`
+	EditorialBadgeInfo                     EditorialBadgeInfo       `json:"editorialBadgeInfo"`
 	EditorialNotes                         EditorialNotes           `json:"editorialNotes"`
 	FirstVersionSupportingInAppPurchaseAPI string                   `json:"firstVersionSupportingInAppPurchaseApi"`
 	Genres                                 Genres                   `json:"genres"`
