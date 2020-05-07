@@ -20,11 +20,13 @@ type Result struct {
 	DisplaySubStyle                        string                   `json:"displaySubStyle"`
 	EditorialArtwork                       map[string]Artwork       `json:"editorialArtwork"`
 	EditorialNotes                         EditorialNotes           `json:"editorialNotes"`
+	FirstVersionSupportingInAppPurchaseAPI string                   `json:"firstVersionSupportingInAppPurchaseApi"`
 	Genres                                 Genres                   `json:"genres"`
 	GenreNames                             []string                 `json:"genreNames"`
 	HasInAppPurchases                      bool                     `json:"hasInAppPurchases"`
 	ID                                     string                   `json:"id"`
 	ItunesNotes                            ItunesNotes              `json:"itunesNotes"`
+	IsAppleWatchSupported                  bool                     `json:"isAppleWatchSupported"`
 	Kind                                   string                   `json:"kind"`
 	Label                                  string                   `json:"label"`
 	Link                                   Link                     `json:"link"`
@@ -42,6 +44,4 @@ type Result struct {
 	Subtitle                               string                   `json:"subtitle"`
 	URL                                    string                   `json:"url"`
 	UserRating                             UserRating               `json:"userRating"`
-	FirstVersionSupportingInAppPurchaseAPI string                   `json:"firstVersionSupportingInAppPurchaseApi"`
-	IsAppleWatchSupported                  bool                     `json:"isAppleWatchSupported"`
 }
