@@ -84,6 +84,44 @@ func AsSuggestions(keyword string, location string, language string) []byte {
 	return body[:]
 }
 
+// AsGrouping returns group TODO.
+func AsGrouping(keyword string, location string, language string) []byte {
+	const baseURL = "http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewGrouping"
+	uri, err := url.Parse(baseURL)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "parsing as grouping url: %v\n", err)
+	}
+
+	query, _ := url.ParseQuery(uri.RawQuery)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "parsing as grouping query: %v\n", err)
+	}
+	query.Add("cc", "ru")
+	query.Add("id", "134440")
+	uri.RawQuery = query.Encode()
+
+	buildStoreFront(location, language)
+
+	req, err := http.NewRequest("GET", uri.String(), nil)
+	req.Header.Add("x-apple-store-front", asStoreFront) // TODO учесть другие страны
+	req.Header.Add("user-agent", asUserAgent)           // TODO
+	req.Header.Add("x-apple-i-timezone", "GMT+3")       // TODO
+	req.Header.Add("Host", "itunes.apple.com")          // TODO
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "app store grouping request: %v\n", err)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "reading as grouping response body: %v\n", err)
+	}
+
+	return body[:]
+}
+
 // AsRoom returns a Room by its ID.
 func AsRoom(adamID string, location string, language string) RoomResponse {
 	const baseURL = "https://itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom"
