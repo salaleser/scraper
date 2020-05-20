@@ -108,8 +108,8 @@ func AsGrouping(id string, location string, language string) ([]byte, error) {
 	uri.RawQuery = query.Encode()
 
 	req, err := http.NewRequest("GET", uri.String(), nil)
-	req.Header.Add("x-apple-store-front", asStoreFront) // TODO учесть другие страны
-	req.Header.Add("user-agent", asUserAgent)           // TODO
+	req.Header.Add("x-apple-store-front", buildStoreFront(location, language))
+	req.Header.Add("user-agent", asUserAgent) // TODO
 
 	proxyURL, err := url.Parse(asProxyURL)
 	if err != nil {
