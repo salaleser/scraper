@@ -1,8 +1,10 @@
 package scraper
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -10,6 +12,9 @@ import (
 
 const asUserAgent = "AppStore/3.0 iOS/11.1.1 model/iPhone6,2 hwp/s5l8960x build/15B150 (6; dt:90)"
 const asStoreFront = "143469-16,29 t:apps3"
+const asProxyURL = "http://176.9.112.168:5005"
+
+var debug = false
 
 // AsStory returns a Story by its ID.
 func AsStory(storyID string, location string, language string) StoryResponse {
@@ -19,7 +24,7 @@ func AsStory(storyID string, location string, language string) StoryResponse {
 		fmt.Fprintf(os.Stderr, "parsing as story url: %v\n", err)
 	}
 
-	query, _ := url.ParseQuery(uri.RawQuery)
+	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "parsing as story query: %v\n", err)
 	}
@@ -54,7 +59,7 @@ func AsSuggestions(keyword string, location string, language string) []byte {
 		fmt.Fprintf(os.Stderr, "parsing as url: %v\n", err)
 	}
 
-	query, _ := url.ParseQuery(uri.RawQuery)
+	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "parsing as query: %v\n", err)
 	}
@@ -85,41 +90,57 @@ func AsSuggestions(keyword string, location string, language string) []byte {
 }
 
 // AsGrouping returns group TODO.
-func AsGrouping(keyword string, location string, language string) []byte {
+func AsGrouping(id string, location string, language string) ([]byte, error) {
 	const baseURL = "http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewGrouping"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "parsing as grouping url: %v\n", err)
+		return nil, err
 	}
 
-	query, _ := url.ParseQuery(uri.RawQuery)
+	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "parsing as grouping query: %v\n", err)
+		return nil, err
 	}
-	query.Add("cc", "ru")
-	query.Add("id", "134440")
+	query.Add("cc", location)
+	query.Add("id", id)
 	uri.RawQuery = query.Encode()
-
-	buildStoreFront(location, language)
 
 	req, err := http.NewRequest("GET", uri.String(), nil)
 	req.Header.Add("x-apple-store-front", asStoreFront) // TODO учесть другие страны
 	req.Header.Add("user-agent", asUserAgent)           // TODO
-	req.Header.Add("x-apple-i-timezone", "GMT+3")       // TODO
-	req.Header.Add("Host", "itunes.apple.com")          // TODO
 
-	client := &http.Client{}
+	proxyURL, err := url.Parse(asProxyURL)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "parsing as grouping proxy url: %v\n", err)
+		return nil, err
+	}
+
+	client := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)}}
+	if debug {
+		log.Printf("[DBG] request: %s", req.URL.String())
+	}
+
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "app store grouping request: %v\n", err)
+		if debug {
+			fmt.Fprintf(os.Stderr, "app store grouping request: %v\n", err)
+		}
+		return nil, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "reading as grouping response body: %v\n", err)
+		return nil, err
 	}
 
-	return body[:]
+	if resp.StatusCode != 200 {
+		return body, errors.New(resp.Status)
+	}
+
+	return body, nil
 }
 
 // AsRoom returns a Room by its ID.
@@ -130,7 +151,7 @@ func AsRoom(adamID string, location string, language string) RoomResponse {
 		fmt.Fprintf(os.Stderr, "parsing as room url: %v\n", err)
 	}
 
-	query, _ := url.ParseQuery(uri.RawQuery)
+	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "parsing as room query: %v\n", err)
 	}
@@ -167,7 +188,7 @@ func AsAppIDs(keyword string, location string, language string) []MetadataRespon
 		fmt.Fprintf(os.Stderr, "parsing as url: %v\n", err)
 	}
 
-	query, _ := url.ParseQuery(uri.RawQuery)
+	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "parsing as query: %v\n", err)
 	}
@@ -205,7 +226,7 @@ func AsMetadata(appID string, location string, language string) MetadataResponse
 		fmt.Fprintf(os.Stderr, "parsing as url: %v\n", err)
 	}
 
-	query, _ := url.ParseQuery(uri.RawQuery)
+	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "parsing as query: %v\n", err)
 	}
@@ -239,7 +260,7 @@ func GpAppIDs(keyword string, location string, language string) []MetadataRespon
 		fmt.Fprintf(os.Stderr, "parsing gp url: %v\n", err)
 	}
 
-	query, _ := url.ParseQuery(uri.RawQuery)
+	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "parsing gp query: %v\n", err)
 	}
@@ -274,7 +295,7 @@ func GpMetadata(appID string, location string, language string) MetadataResponse
 		fmt.Fprintf(os.Stderr, "parsing gp url: %v\n", err)
 	}
 
-	query, _ := url.ParseQuery(uri.RawQuery)
+	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "parsing gp query: %v\n", err)
 	}

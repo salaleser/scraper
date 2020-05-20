@@ -1,5 +1,9 @@
 package scraper
 
 func buildStoreFront(location string, language string) string {
-	return StoreFront[location]
+	if storeFront, ok := StoreFronts[location]; ok {
+		return storeFront
+	}
+
+	return ""
 }
