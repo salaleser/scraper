@@ -19,15 +19,18 @@ var debug = false
 
 // AsStory returns a Story by its ID.
 func AsStory(storyID string, cc string, l string) StoryResponse {
+	const errMsg = "[ERR] scraper.AsStory(%s,%s,%s): %v\n"
 	const baseURL = "https://apps.apple.com/%s/story/id%s"
 	uri, err := url.Parse(fmt.Sprintf(baseURL, cc, storyID))
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "AsStory(%s,%s): %v\n", storyID, cc, err)
+		fmt.Fprintf(os.Stderr, errMsg, storyID, cc, l, err)
+		return StoryResponse{}
 	}
 
 	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "AsStory(%s,%s): %v\n", storyID, cc, err)
+		fmt.Fprintf(os.Stderr, errMsg, storyID, cc, l, err)
+		return StoryResponse{}
 	}
 	query.Add("cc", cc)
 	uri.RawQuery = query.Encode()
@@ -41,28 +44,33 @@ func AsStory(storyID string, cc string, l string) StoryResponse {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "AsStory(%s,%s): %v\n", storyID, cc, err)
+		fmt.Fprintf(os.Stderr, errMsg, storyID, cc, l, err)
+		return StoryResponse{}
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "AsStory(%s,%s): %v\n", storyID, cc, err)
+		fmt.Fprintf(os.Stderr, errMsg, storyID, cc, l, err)
+		return StoryResponse{}
 	}
 
-	return parseAsStory(body[:])
+	return parseAsStory(body)
 }
 
 // AsSuggestions returns suggestions by a keyword.
 func AsSuggestions(keyword string, cc string, l string) []byte {
+	const errMsg = "[ERR] scraper.AsSuggestions(%s,%s,%s): %v\n"
 	const baseURL = "https://search.itunes.apple.com/WebObjects/MZSearchHints.woa/wa/hints"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "parsing as url: %v\n", err)
+		fmt.Fprintf(os.Stderr, errMsg, keyword, cc, l, err)
+		return nil
 	}
 
 	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "parsing as query: %v\n", err)
+		fmt.Fprintf(os.Stderr, errMsg, keyword, cc, l, err)
+		return nil
 	}
 	query.Add("clientApplication", "Software")
 	query.Add("caller", "com.apple.AppStore")
@@ -79,29 +87,32 @@ func AsSuggestions(keyword string, cc string, l string) []byte {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "app store request: %v\n", err)
+		fmt.Fprintf(os.Stderr, errMsg, keyword, cc, l, err)
+		return nil
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "reading as response body: %v\n", err)
+		fmt.Fprintf(os.Stderr, errMsg, keyword, cc, l, err)
+		return nil
 	}
 
-	return body[:]
+	return body
 }
 
 // AsGenre returns App Store root page for Genre structure
 func AsGenre(id int, cc string) (Page, error) {
+	const errMsg = "[ERR] scraper.AsGenre(%d,%s): %v\n"
 	const baseURL = "https://itunes.apple.com/%s/genre"
 	uri, err := url.Parse(fmt.Sprintf(baseURL, cc))
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGenre(%d,%s): %v\n", id, cc, err)
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, err)
 		return Page{}, err
 	}
 
 	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGenre(%d,%s): %v\n", id, cc, err)
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, err)
 		return Page{}, err
 	}
 	query.Add("id", strconv.Itoa(id))
@@ -115,7 +126,7 @@ func AsGenre(id int, cc string) (Page, error) {
 
 	proxyURL, err := url.Parse(asProxyURL)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGenre(%d,%s): %v\n", id, cc, err)
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, err)
 		return Page{}, err
 	}
 
@@ -128,14 +139,14 @@ func AsGenre(id int, cc string) (Page, error) {
 	resp, err := client.Do(req)
 	if err != nil {
 		if debug {
-			fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGenre(%d,%s): %v\n", id, cc, err)
+			fmt.Fprintf(os.Stderr, errMsg, id, cc, err)
 		}
 		return Page{}, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGenre(%d,%s): %v\n", id, cc, err)
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, err)
 		return Page{}, err
 	}
 
@@ -145,7 +156,7 @@ func AsGenre(id int, cc string) (Page, error) {
 
 	page, err := ParsePage(body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGenre(%d,%s): %v\n", id, cc, err)
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, err)
 		return Page{}, err
 	}
 
@@ -154,18 +165,17 @@ func AsGenre(id int, cc string) (Page, error) {
 
 // AsGrouping returns App Store root page for Grouping structure
 func AsGrouping(id int, cc string, l string) (Page, error) {
+	const errMsg = "[ERR] scraper.AsGrouping(%d,%s,%s): %v\n"
 	const baseURL = "http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewGrouping"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGrouping(%d,%s,%s): %v\n", id,
-			cc, l, err)
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, l, err)
 		return Page{}, err
 	}
 
 	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGrouping(%d,%s,%s): %v\n", id,
-			cc, l, err)
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, l, err)
 		return Page{}, err
 	}
 	query.Add("cc", cc)
@@ -180,8 +190,7 @@ func AsGrouping(id int, cc string, l string) (Page, error) {
 
 	proxyURL, err := url.Parse(asProxyURL)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGrouping(%d,%s,%s): %v\n", id,
-			cc, l, err)
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, l, err)
 		return Page{}, err
 	}
 
@@ -194,16 +203,14 @@ func AsGrouping(id int, cc string, l string) (Page, error) {
 	resp, err := client.Do(req)
 	if err != nil {
 		if debug {
-			fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGrouping(%d,%s,%s): %v\n", id,
-				cc, l, err)
+			fmt.Fprintf(os.Stderr, errMsg, id, cc, l, err)
 		}
 		return Page{}, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGrouping(%d,%s,%s): %v\n", id,
-			cc, l, err)
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, l, err)
 		return Page{}, err
 	}
 
@@ -213,8 +220,7 @@ func AsGrouping(id int, cc string, l string) (Page, error) {
 
 	page, err := ParsePage(body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGrouping(%d,%s,%s): %v\n", id,
-			cc, l, err)
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, l, err)
 		return Page{}, err
 	}
 
@@ -223,15 +229,18 @@ func AsGrouping(id int, cc string, l string) (Page, error) {
 
 // AsRoom returns a Room by its ID.
 func AsRoom(adamID string, cc string, l string) RoomResponse {
+	const errMsg = "[ERR] scraper.AsRoom(%s,%s,%s): %v\n"
 	const baseURL = "https://itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "parsing as room url: %v\n", err)
+		fmt.Fprintf(os.Stderr, errMsg, adamID, cc, l, err)
+		return RoomResponse{}
 	}
 
 	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "parsing as room query: %v\n", err)
+		fmt.Fprintf(os.Stderr, errMsg, adamID, cc, l, err)
+		return RoomResponse{}
 	}
 	query.Add("fcId", adamID)
 	// query.Add("genreIdString", "6014")                           // TODO изучить
@@ -247,12 +256,14 @@ func AsRoom(adamID string, cc string, l string) RoomResponse {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "app store room request: %v\n", err)
+		fmt.Fprintf(os.Stderr, errMsg, adamID, cc, l, err)
+		return RoomResponse{}
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "reading as room response body: %v\n", err)
+		fmt.Fprintf(os.Stderr, errMsg, adamID, cc, l, err)
+		return RoomResponse{}
 	}
 
 	return parseAsRoom(body[:])
@@ -260,15 +271,18 @@ func AsRoom(adamID string, cc string, l string) RoomResponse {
 
 // AsAppIDs returns application IDs by a keyword.
 func AsAppIDs(keyword string, cc string, l string) []MetadataResponse {
+	const errMsg = "[ERR] scraper.AsAppIDs(%s,%s,%s): %v\n"
 	const baseURL = "https://search.itunes.apple.com/WebObjects/MZStore.woa/wa/search"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "parsing as url: %v\n", err)
+		fmt.Fprintf(os.Stderr, errMsg, keyword, cc, l, err)
+		return []MetadataResponse{}
 	}
 
 	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "parsing as query: %v\n", err)
+		fmt.Fprintf(os.Stderr, errMsg, keyword, cc, l, err)
+		return []MetadataResponse{}
 	}
 	query.Add("clientApplication", "Software")
 	query.Add("caller", "com.apple.AppStore")
@@ -285,46 +299,53 @@ func AsAppIDs(keyword string, cc string, l string) []MetadataResponse {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "app store request: %v\n", err)
+		fmt.Fprintf(os.Stderr, errMsg, keyword, cc, l, err)
+		return []MetadataResponse{}
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "reading as response body: %v\n", err)
+		fmt.Fprintf(os.Stderr, errMsg, keyword, cc, l, err)
+		return []MetadataResponse{}
 	}
 
-	return parseAsIDs(body[:])
+	return parseAsIDs(body)
 }
 
 // AsMetadata returns an Application's metadata by its ID.
 func AsMetadata(appID string, cc string, l string) MetadataResponse {
+	const errMsg = "[ERR] scraper.AsMetadata(%s,%s,%s): %v\n"
 	const baseURLpart = "https://apps.apple.com/%s/app/id%s"
 	uri, err := url.Parse(fmt.Sprintf(baseURLpart, cc, appID))
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "parsing as url: %v\n", err)
+		fmt.Fprintf(os.Stderr, errMsg, appID, cc, l, err)
+		return MetadataResponse{}
 	}
 
 	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "parsing as query: %v\n", err)
+		fmt.Fprintf(os.Stderr, errMsg, appID, cc, l, err)
+		return MetadataResponse{}
 	}
 	uri.RawQuery = query.Encode()
 
 	storeFront := buildStoreFront(cc, l)
 
 	req, err := http.NewRequest("GET", uri.String(), nil)
-	req.Header.Add("x-apple-store-front", storeFront) // TODO учесть другие страны
+	req.Header.Add("x-apple-store-front", storeFront)
 	req.Header.Add("user-agent", asUserAgent)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "app store request: %v\n", err)
+		fmt.Fprintf(os.Stderr, errMsg, appID, cc, l, err)
+		return MetadataResponse{}
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "reading as response body: %v\n", err)
+		fmt.Fprintf(os.Stderr, errMsg, appID, cc, l, err)
+		return MetadataResponse{}
 	}
 
 	return parseAsMetadata(body)
@@ -332,15 +353,18 @@ func AsMetadata(appID string, cc string, l string) MetadataResponse {
 
 // GpAppIDs returns application IDs by a keyword.
 func GpAppIDs(keyword string, gl string, hl string) []MetadataResponse {
+	const errMsg = "[ERR] scraper.GpAppIDs(%s,%s,%s): %v\n"
 	const baseURL = "https://play.google.com/_/PlayStoreUi/data/batchexecute"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "parsing gp url: %v\n", err)
+		fmt.Fprintf(os.Stderr, errMsg, keyword, gl, hl, err)
+		return []MetadataResponse{}
 	}
 
 	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "parsing gp query: %v\n", err)
+		fmt.Fprintf(os.Stderr, errMsg, keyword, gl, hl, err)
+		return []MetadataResponse{}
 	}
 	query.Add("gl", gl)
 	query.Add("hl", hl)
@@ -353,12 +377,14 @@ func GpAppIDs(keyword string, gl string, hl string) []MetadataResponse {
 
 	resp, err := http.PostForm(baseURL, data)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "gp request: %v\n", err)
+		fmt.Fprintf(os.Stderr, errMsg, keyword, gl, hl, err)
+		return []MetadataResponse{}
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "reading gp resopnse body: %v\n", err)
+		fmt.Fprintf(os.Stderr, errMsg, keyword, gl, hl, err)
+		return []MetadataResponse{}
 	}
 
 	return parseGpIDs(body[5:])
@@ -366,15 +392,18 @@ func GpAppIDs(keyword string, gl string, hl string) []MetadataResponse {
 
 // GpMetadata returns an Application's metadata by its ID.
 func GpMetadata(appID string, gl string, hl string) MetadataResponse {
+	const errMsg = "[ERR] scraper.GpMetadata(%s,%s,%s): %v\n"
 	const baseURL = "https://play.google.com/_/PlayStoreUi/data/batchexecute"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "parsing gp url: %v\n", err)
+		fmt.Fprintf(os.Stderr, errMsg, appID, gl, hl, err)
+		return MetadataResponse{}
 	}
 
 	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "parsing gp query: %v\n", err)
+		fmt.Fprintf(os.Stderr, errMsg, appID, gl, hl, err)
+		return MetadataResponse{}
 	}
 	query.Add("gl", gl)
 	query.Add("hl", hl)
@@ -393,12 +422,14 @@ func GpMetadata(appID string, gl string, hl string) MetadataResponse {
 
 	resp, err := http.PostForm(baseURL, data)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "google play request: %v\n", err)
+		fmt.Fprintf(os.Stderr, errMsg, appID, gl, hl, err)
+		return MetadataResponse{}
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "reading gp response body: %v\n", err)
+		fmt.Fprintf(os.Stderr, errMsg, appID, gl, hl, err)
+		return MetadataResponse{}
 	}
 
 	return parseGpMetadata(body[5:])
