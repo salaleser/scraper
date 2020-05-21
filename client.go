@@ -327,7 +327,7 @@ func AsMetadata(appID string, cc string, l string) MetadataResponse {
 		fmt.Fprintf(os.Stderr, "reading as response body: %v\n", err)
 	}
 
-	return parseAsMetadata(body[:])
+	return parseAsMetadata(body)
 }
 
 // GpAppIDs returns application IDs by a keyword.

@@ -96,7 +96,7 @@ func parseAsMetadata(body []byte) MetadataResponse {
 
 		metadata = MetadataResponse{
 			AppID:       result.ID,
-			Link:        result.Link.URL,
+			Link:        result.URL,
 			ArtistName:  result.ArtistName,
 			Rating:      result.UserRating.Value,
 			ReleaseDate: result.ReleaseDate,
