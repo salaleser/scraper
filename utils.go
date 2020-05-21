@@ -5,21 +5,21 @@ import (
 	"strings"
 )
 
-func buildStoreFront(location string, language string) string {
+func buildStoreFront(cc string, l string) string {
 	p, ok := PlatformIDs["iphone"]
 	if !ok {
 		p = "29"
 	}
 
-	sf, ok := StoreFronts[strings.ToUpper(location)] // FIXME case
+	sf, ok := StoreFronts[strings.ToUpper(cc)] // FIXME case
 	if !ok {
 		return ""
 	}
 
-	l, ok := Languages[language]
+	appleLanguageCode, ok := Languages[l]
 	if !ok {
 		return fmt.Sprintf("%s,%s t:apps3", sf, p)
 	}
 
-	return fmt.Sprintf("%s-%s,%s t:apps3", sf, l, p)
+	return fmt.Sprintf("%s-%s,%s t:apps3", sf, appleLanguageCode, p)
 }

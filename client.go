@@ -18,42 +18,42 @@ const asProxyURL = "http://176.9.112.168:5005"
 var debug = false
 
 // AsStory returns a Story by its ID.
-func AsStory(storyID string, location string, language string) StoryResponse {
+func AsStory(storyID string, cc string, l string) StoryResponse {
 	const baseURL = "https://apps.apple.com/%s/story/id%s"
-	uri, err := url.Parse(fmt.Sprintf(baseURL, location, storyID))
+	uri, err := url.Parse(fmt.Sprintf(baseURL, cc, storyID))
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "AsStory(%s,%s): %v\n", storyID, location, err)
+		fmt.Fprintf(os.Stderr, "AsStory(%s,%s): %v\n", storyID, cc, err)
 	}
 
 	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "AsStory(%s,%s): %v\n", storyID, location, err)
+		fmt.Fprintf(os.Stderr, "AsStory(%s,%s): %v\n", storyID, cc, err)
 	}
-	query.Add("cc", location)
+	query.Add("cc", cc)
 	uri.RawQuery = query.Encode()
 
+	storeFront := buildStoreFront(cc, l)
+
 	req, err := http.NewRequest("GET", uri.String(), nil)
-	req.Header.Add("x-apple-store-front", asStoreFront) // TODO учесть другие страны
-	req.Header.Add("user-agent", asUserAgent)           // TODO
-	req.Header.Add("x-apple-i-timezone", "GMT+3")       // TODO
-	req.Header.Add("Host", "itunes.apple.com")          // TODO
+	req.Header.Add("x-apple-store-front", storeFront)
+	req.Header.Add("user-agent", asUserAgent)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "AsStory(%s,%s): %v\n", storyID, location, err)
+		fmt.Fprintf(os.Stderr, "AsStory(%s,%s): %v\n", storyID, cc, err)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "AsStory(%s,%s): %v\n", storyID, location, err)
+		fmt.Fprintf(os.Stderr, "AsStory(%s,%s): %v\n", storyID, cc, err)
 	}
 
 	return parseAsStory(body[:])
 }
 
 // AsSuggestions returns suggestions by a keyword.
-func AsSuggestions(keyword string, location string, language string) []byte {
+func AsSuggestions(keyword string, cc string, l string) []byte {
 	const baseURL = "https://search.itunes.apple.com/WebObjects/MZSearchHints.woa/wa/hints"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
@@ -70,11 +70,11 @@ func AsSuggestions(keyword string, location string, language string) []byte {
 	query.Add("term", keyword)
 	uri.RawQuery = query.Encode()
 
+	storeFront := buildStoreFront(cc, l)
+
 	req, err := http.NewRequest("GET", uri.String(), nil)
-	req.Header.Add("x-apple-store-front", asStoreFront) // TODO учесть другие страны
-	req.Header.Add("user-agent", asUserAgent)           // TODO
-	req.Header.Add("x-apple-i-timezone", "GMT+3")       // TODO
-	req.Header.Add("Host", "search.itunes.apple.com")   // TODO
+	req.Header.Add("x-apple-store-front", storeFront)
+	req.Header.Add("user-agent", asUserAgent)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -90,50 +90,52 @@ func AsSuggestions(keyword string, location string, language string) []byte {
 	return body[:]
 }
 
-func AsGenre(id int, location string) (Page, error) {
-	const baseURL = "https://itunes.apple.com/genre"
-	uri, err := url.Parse(baseURL)
+// AsGenre returns App Store root page for Genre structure
+func AsGenre(id int, cc string) (Page, error) {
+	const baseURL = "https://itunes.apple.com/%s/genre"
+	uri, err := url.Parse(fmt.Sprintf(baseURL, cc))
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGenre(%d,%s): %v\n", id, location, err)
+		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGenre(%d,%s): %v\n", id, cc, err)
 		return Page{}, err
 	}
 
 	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGenre(%d,%s): %v\n", id, location, err)
+		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGenre(%d,%s): %v\n", id, cc, err)
 		return Page{}, err
 	}
 	query.Add("id", strconv.Itoa(id))
 	uri.RawQuery = query.Encode()
 
-	storeFront := buildStoreFront(location, "")
+	storeFront := buildStoreFront(cc, "")
 
 	req, err := http.NewRequest("GET", uri.String(), nil)
 	req.Header.Add("x-apple-store-front", storeFront)
-	req.Header.Add("user-agent", asUserAgent) // TODO
+	req.Header.Add("user-agent", asUserAgent)
 
 	proxyURL, err := url.Parse(asProxyURL)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGenre(%d,%s): %v\n", id, location, err)
+		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGenre(%d,%s): %v\n", id, cc, err)
 		return Page{}, err
 	}
 
 	client := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)}}
+	client = &http.Client{} // использовать ли прокси TODO
 	if debug {
-		log.Printf("[DBG] %s (%s): %s", location, storeFront, req.URL.String())
+		log.Printf("[DBG] %s (%s): %s", cc, storeFront, req.URL.String())
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
 		if debug {
-			fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGenre(%d,%s): %v\n", id, location, err)
+			fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGenre(%d,%s): %v\n", id, cc, err)
 		}
 		return Page{}, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGenre(%d,%s): %v\n", id, location, err)
+		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGenre(%d,%s): %v\n", id, cc, err)
 		return Page{}, err
 	}
 
@@ -143,69 +145,84 @@ func AsGenre(id int, location string) (Page, error) {
 
 	page, err := ParsePage(body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGenre(%d,%s): %v\n", id, location, err)
+		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGenre(%d,%s): %v\n", id, cc, err)
 		return Page{}, err
 	}
 
 	return page, nil
 }
 
-// AsGrouping returns group TODO.
-func AsGrouping(id string, location string, language string) ([]byte, error) {
+// AsGrouping returns App Store root page for Grouping structure
+func AsGrouping(id int, cc string, l string) (Page, error) {
 	const baseURL = "http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewGrouping"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "parsing as grouping url: %v\n", err)
-		return nil, err
+		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGrouping(%d,%s,%s): %v\n", id,
+			cc, l, err)
+		return Page{}, err
 	}
 
 	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "parsing as grouping query: %v\n", err)
-		return nil, err
+		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGrouping(%d,%s,%s): %v\n", id,
+			cc, l, err)
+		return Page{}, err
 	}
-	query.Add("cc", location)
-	query.Add("id", id)
+	query.Add("cc", cc)
+	query.Add("id", strconv.Itoa(id))
 	uri.RawQuery = query.Encode()
 
+	storeFront := buildStoreFront(cc, l)
+
 	req, err := http.NewRequest("GET", uri.String(), nil)
-	req.Header.Add("x-apple-store-front", buildStoreFront(location, language))
-	req.Header.Add("user-agent", asUserAgent) // TODO
+	req.Header.Add("x-apple-store-front", storeFront)
+	req.Header.Add("user-agent", asUserAgent)
 
 	proxyURL, err := url.Parse(asProxyURL)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "parsing as grouping proxy url: %v\n", err)
-		return nil, err
+		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGrouping(%d,%s,%s): %v\n", id,
+			cc, l, err)
+		return Page{}, err
 	}
 
 	client := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)}}
+	client = &http.Client{} // TODO Использовать ли прокси
 	if debug {
-		log.Printf("[DBG] request: %s", req.URL.String())
+		log.Printf("[DBG] %s (%s): %s", cc, storeFront, req.URL.String())
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
 		if debug {
-			fmt.Fprintf(os.Stderr, "app store grouping request: %v\n", err)
+			fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGrouping(%d,%s,%s): %v\n", id,
+				cc, l, err)
 		}
-		return nil, err
+		return Page{}, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "reading as grouping response body: %v\n", err)
-		return nil, err
+		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGrouping(%d,%s,%s): %v\n", id,
+			cc, l, err)
+		return Page{}, err
 	}
 
 	if resp.StatusCode != 200 {
-		return body, errors.New(resp.Status)
+		return Page{}, errors.New(resp.Status)
 	}
 
-	return body, nil
+	page, err := ParsePage(body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGrouping(%d,%s,%s): %v\n", id,
+			cc, l, err)
+		return Page{}, err
+	}
+
+	return page, nil
 }
 
 // AsRoom returns a Room by its ID.
-func AsRoom(adamID string, location string, language string) RoomResponse {
+func AsRoom(adamID string, cc string, l string) RoomResponse {
 	const baseURL = "https://itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
@@ -221,11 +238,11 @@ func AsRoom(adamID string, location string, language string) RoomResponse {
 	// query.Add("mediaTypeString", "Mobile+Software+Applications") // TODO изучить
 	uri.RawQuery = query.Encode()
 
+	storeFront := buildStoreFront(cc, l)
+
 	req, err := http.NewRequest("GET", uri.String(), nil)
-	req.Header.Add("x-apple-store-front", asStoreFront) // TODO учесть другие страны
-	req.Header.Add("user-agent", asUserAgent)           // TODO
-	req.Header.Add("x-apple-i-timezone", "GMT+3")       // TODO
-	req.Header.Add("Host", "itunes.apple.com")          // TODO
+	req.Header.Add("x-apple-store-front", storeFront)
+	req.Header.Add("user-agent", asUserAgent)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -242,7 +259,7 @@ func AsRoom(adamID string, location string, language string) RoomResponse {
 }
 
 // AsAppIDs returns application IDs by a keyword.
-func AsAppIDs(keyword string, location string, language string) []MetadataResponse {
+func AsAppIDs(keyword string, cc string, l string) []MetadataResponse {
 	const baseURL = "https://search.itunes.apple.com/WebObjects/MZStore.woa/wa/search"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
@@ -259,11 +276,11 @@ func AsAppIDs(keyword string, location string, language string) []MetadataRespon
 	query.Add("term", keyword)
 	uri.RawQuery = query.Encode()
 
+	storeFront := buildStoreFront(cc, l)
+
 	req, err := http.NewRequest("GET", uri.String(), nil)
-	req.Header.Add("x-apple-store-front", asStoreFront) // TODO учесть другие страны
-	req.Header.Add("user-agent", asUserAgent)           // TODO
-	req.Header.Add("x-apple-i-timezone", "GMT+3")       // TODO
-	req.Header.Add("Host", "search.itunes.apple.com")   // TODO
+	req.Header.Add("x-apple-store-front", storeFront)
+	req.Header.Add("user-agent", asUserAgent)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -280,9 +297,9 @@ func AsAppIDs(keyword string, location string, language string) []MetadataRespon
 }
 
 // AsMetadata returns an Application's metadata by its ID.
-func AsMetadata(appID string, location string, language string) MetadataResponse {
-	const baseURLpart = "https://apps.apple.com/ru/app/id"
-	uri, err := url.Parse(baseURLpart + appID)
+func AsMetadata(appID string, cc string, l string) MetadataResponse {
+	const baseURLpart = "https://apps.apple.com/%s/app/id%s"
+	uri, err := url.Parse(fmt.Sprintf(baseURLpart, cc, appID))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "parsing as url: %v\n", err)
 	}
@@ -293,11 +310,11 @@ func AsMetadata(appID string, location string, language string) MetadataResponse
 	}
 	uri.RawQuery = query.Encode()
 
+	storeFront := buildStoreFront(cc, l)
+
 	req, err := http.NewRequest("GET", uri.String(), nil)
-	req.Header.Add("x-apple-store-front", asStoreFront) // TODO учесть другие страны
-	req.Header.Add("user-agent", asUserAgent)           // TODO
-	req.Header.Add("x-apple-i-timezone", "GMT+3")       // TODO
-	req.Header.Add("Host", "apps.apple.com")            // TODO
+	req.Header.Add("x-apple-store-front", storeFront) // TODO учесть другие страны
+	req.Header.Add("user-agent", asUserAgent)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -314,7 +331,7 @@ func AsMetadata(appID string, location string, language string) MetadataResponse
 }
 
 // GpAppIDs returns application IDs by a keyword.
-func GpAppIDs(keyword string, location string, language string) []MetadataResponse {
+func GpAppIDs(keyword string, gl string, hl string) []MetadataResponse {
 	const baseURL = "https://play.google.com/_/PlayStoreUi/data/batchexecute"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
@@ -325,9 +342,8 @@ func GpAppIDs(keyword string, location string, language string) []MetadataRespon
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "parsing gp query: %v\n", err)
 	}
-	query.Add("gl", location)
-	query.Add("hl", language)
-	// TODO add queries (soc-app, ...)
+	query.Add("gl", gl)
+	query.Add("hl", hl)
 	uri.RawQuery = query.Encode()
 
 	value := fmt.Sprintf("[[[lGYRle,'[[null,[[10,[10,%d]],true,null,[96,27,4,8,57,30,110,79,11,16,49,1,3,9,12,104,55,56,51,10,34,77]],[%s],4,null,null,null,[]]]',null,%s]]]", 5, keyword, keyword)
@@ -349,7 +365,7 @@ func GpAppIDs(keyword string, location string, language string) []MetadataRespon
 }
 
 // GpMetadata returns an Application's metadata by its ID.
-func GpMetadata(appID string, location string, language string) MetadataResponse {
+func GpMetadata(appID string, gl string, hl string) MetadataResponse {
 	const baseURL = "https://play.google.com/_/PlayStoreUi/data/batchexecute"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
@@ -360,9 +376,8 @@ func GpMetadata(appID string, location string, language string) MetadataResponse
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "parsing gp query: %v\n", err)
 	}
-	query.Add("gl", location)
-	query.Add("hl", language)
-	// TODO add queries (soc-app, ...)
+	query.Add("gl", gl)
+	query.Add("hl", hl)
 	uri.RawQuery = query.Encode()
 
 	// v1 := fmt.Sprintf("[d5UeYe,'[[%s,7]]',null,%s]", appID, appID)        // price
