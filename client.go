@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 )
 
 const asUserAgent = "AppStore/3.0 iOS/11.1.1 model/iPhone6,2 hwp/s5l8960x build/15B150 (6; dt:90)"
@@ -21,12 +22,12 @@ func AsStory(storyID string, location string, language string) StoryResponse {
 	const baseURL = "https://apps.apple.com/%s/story/id%s"
 	uri, err := url.Parse(fmt.Sprintf(baseURL, location, storyID))
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "parsing as story url: %v\n", err)
+		fmt.Fprintf(os.Stderr, "AsStory(%s,%s): %v\n", storyID, location, err)
 	}
 
 	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "parsing as story query: %v\n", err)
+		fmt.Fprintf(os.Stderr, "AsStory(%s,%s): %v\n", storyID, location, err)
 	}
 	query.Add("cc", location)
 	uri.RawQuery = query.Encode()
@@ -40,12 +41,12 @@ func AsStory(storyID string, location string, language string) StoryResponse {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "app store story request: %v\n", err)
+		fmt.Fprintf(os.Stderr, "AsStory(%s,%s): %v\n", storyID, location, err)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "reading as story response body: %v\n", err)
+		fmt.Fprintf(os.Stderr, "AsStory(%s,%s): %v\n", storyID, location, err)
 	}
 
 	return parseAsStory(body[:])
@@ -87,6 +88,66 @@ func AsSuggestions(keyword string, location string, language string) []byte {
 	}
 
 	return body[:]
+}
+
+func AsGenre(id int, location string) (Page, error) {
+	const baseURL = "https://itunes.apple.com/genre"
+	uri, err := url.Parse(baseURL)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGenre(%d,%s): %v\n", id, location, err)
+		return Page{}, err
+	}
+
+	query, err := url.ParseQuery(uri.RawQuery)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGenre(%d,%s): %v\n", id, location, err)
+		return Page{}, err
+	}
+	query.Add("id", strconv.Itoa(id))
+	uri.RawQuery = query.Encode()
+
+	storeFront := buildStoreFront(location, "")
+
+	req, err := http.NewRequest("GET", uri.String(), nil)
+	req.Header.Add("x-apple-store-front", storeFront)
+	req.Header.Add("user-agent", asUserAgent) // TODO
+
+	proxyURL, err := url.Parse(asProxyURL)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGenre(%d,%s): %v\n", id, location, err)
+		return Page{}, err
+	}
+
+	client := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)}}
+	if debug {
+		log.Printf("[DBG] %s (%s): %s", location, storeFront, req.URL.String())
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		if debug {
+			fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGenre(%d,%s): %v\n", id, location, err)
+		}
+		return Page{}, err
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGenre(%d,%s): %v\n", id, location, err)
+		return Page{}, err
+	}
+
+	if resp.StatusCode != 200 {
+		return Page{}, errors.New(resp.Status)
+	}
+
+	page, err := ParsePage(body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[ERR] scraper.AsGenre(%d,%s): %v\n", id, location, err)
+		return Page{}, err
+	}
+
+	return page, nil
 }
 
 // AsGrouping returns group TODO.

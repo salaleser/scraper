@@ -111,6 +111,17 @@ func parseAsMetadata(body []byte) MetadataResponse {
 	return metadata
 }
 
+// ParsePage parses App Store root page and returns structure
+func ParsePage(body []byte) (Page, error) {
+	var page Page
+	err := json.Unmarshal(body, &page)
+	if err != nil {
+		return Page{}, err
+	}
+
+	return page, nil
+}
+
 func parseAsRoom(body []byte) RoomResponse {
 	var data Page
 	if err := json.Unmarshal(body, &data); err != nil {
