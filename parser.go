@@ -3,7 +3,9 @@ package scraper
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
+	"os"
 	"strings"
 )
 
@@ -52,10 +54,11 @@ type RoomResponse struct {
 }
 
 func parseAsIDs(body []byte) []MetadataResponse {
+	const errMsg = "[ERR] scraper.parseAsIDs(%s...): %v\n"
 	var data Page
 	if err := json.Unmarshal(body, &data); err != nil {
-		log.Printf("Error while trying to unmarshal as IDs (234): %q", err.Error())
-		return []MetadataResponse{} // TODO handle error
+		fmt.Fprintf(os.Stderr, errMsg, body[:10], err)
+		return []MetadataResponse{}
 	}
 
 	metadatas := make([]MetadataResponse, 0)
@@ -77,10 +80,11 @@ func parseAsIDs(body []byte) []MetadataResponse {
 }
 
 func parseAsMetadata(body []byte) MetadataResponse {
+	const errMsg = "[ERR] scraper.parseAsMetadata(%s...): %v\n"
 	var data Page
 	if err := json.Unmarshal(body, &data); err != nil {
-		log.Printf("Error while trying to unmarshal as metadata (1): %q", err.Error())
-		return MetadataResponse{} // TODO handle error
+		fmt.Fprintf(os.Stderr, errMsg, body[:10], err)
+		return MetadataResponse{}
 	}
 
 	var metadata MetadataResponse
@@ -123,10 +127,11 @@ func ParsePage(body []byte) (Page, error) {
 }
 
 func parseAsRoom(body []byte) RoomResponse {
+	const errMsg = "[ERR] scraper.parseAsRoom(%s...): %v\n"
 	var data Page
 	if err := json.Unmarshal(body, &data); err != nil {
-		log.Printf("Error while trying to unmarshal as room (1): %q", err.Error())
-		return RoomResponse{} // TODO handle error
+		fmt.Fprintf(os.Stderr, errMsg, body[:10], err)
+		return RoomResponse{}
 	}
 
 	var room RoomResponse
@@ -158,33 +163,38 @@ func parseAsRoom(body []byte) RoomResponse {
 }
 
 func parseGpIDs(body []byte) []MetadataResponse {
+	const errMsg = "[ERR] scraper.parseGpIDs(%s...): %v\n"
 	var data1 [][]interface{}
 	if err := json.Unmarshal(body, &data1); err != nil {
-		log.Printf("Error while trying to unmarshal gp IDs (1): %q", err.Error())
+		fmt.Fprintf(os.Stderr, errMsg, body[:10], err)
 		return []MetadataResponse{} // TODO handle error
 	}
 
 	d := data1[0]
 
 	if d[0] != "wrb.fr" {
-		log.Printf("The first metadata section element isn't \"wrb.fr\" (%q).", d[0])
-		return []MetadataResponse{} // TODO handle error
+		err := fmt.Errorf("the first metadata section element isn't \"wrb.fr\" (%q)", d[0])
+		fmt.Fprintf(os.Stderr, errMsg, body[:10], err)
+		return []MetadataResponse{}
 	}
 
 	if d[1] != "lGYRle" {
-		log.Printf("The second metadata section element isn't \"lGYRle\" (%q).", d[0])
-		return []MetadataResponse{} // TODO handle error
+		err := fmt.Errorf("the second metadata section element isn't \"lGYRle\" (%q)", d[0])
+		fmt.Fprintf(os.Stderr, errMsg, body[:10], err)
+		return []MetadataResponse{}
 	}
 
 	if d[2] == nil {
-		log.Printf("Error while parsing (386).")
-		return []MetadataResponse{} // TODO handle error
+		err := fmt.Errorf("the third metadata section element doesn't exist")
+		fmt.Fprintf(os.Stderr, errMsg, body[:10], err)
+		return []MetadataResponse{}
 	}
 
 	var data2 []interface{}
 	if err := json.Unmarshal([]byte(d[2].(string)), &data2); err != nil {
-		log.Printf("Error while trying to unmarshal gp IDs (2): %q", err.Error())
-		return []MetadataResponse{} // TODO handle error
+		err := fmt.Errorf("unmarshal gp IDs (2): %v", err)
+		fmt.Fprintf(os.Stderr, errMsg, body[:10], err)
+		return []MetadataResponse{}
 	}
 
 	i1 := data2[0].([]interface{})
@@ -231,7 +241,8 @@ func parseGpIDs(body []byte) []MetadataResponse {
 
 	// FIXME
 	if len(i5) < 2 {
-		log.Printf("len gp json array check: %q", errors.New("len < 2"))
+		err := fmt.Errorf("len check: < 2")
+		fmt.Fprintf(os.Stderr, errMsg, body[:10], err)
 		return []MetadataResponse{}
 	}
 
@@ -251,32 +262,38 @@ func parseGpIDs(body []byte) []MetadataResponse {
 }
 
 func parseGpMetadata(body []byte) MetadataResponse {
+	const errMsg = "[ERR] scraper.parseGpMetadata(%s...): %v\n"
 	var data1 [][]interface{}
 	if err := json.Unmarshal(body, &data1); err != nil {
-		log.Printf("Error while trying to unmarshal gp metadata (1): %q", err.Error())
-		return MetadataResponse{} // TODO handle error
+		err := fmt.Errorf("unmarshal gp metadata: %v", err)
+		fmt.Fprintf(os.Stderr, errMsg, body[:10], err)
+		return MetadataResponse{}
 	}
 
 	d := data1[0]
 
 	if d[0] != "wrb.fr" {
-		log.Printf("The first metadata section element isn't \"wrb.fr\" (%q).", d[0])
+		err := fmt.Errorf("the first metadata section element isn't \"wrb.fr\" (%q)", d[0])
+		fmt.Fprintf(os.Stderr, errMsg, body[:10], err)
 		return MetadataResponse{} // TODO handle error
 	}
 
 	if d[1] != "jLZZ2e" {
-		log.Printf("The second metadata section element isn't \"jLZZ2e\" (%q).", d[0])
+		err := fmt.Errorf("the second metadata section element isn't \"jLZZ2e\" (%q)", d[0])
+		fmt.Fprintf(os.Stderr, errMsg, body[:10], err)
 		return MetadataResponse{} // TODO handle error
 	}
 
 	if d[2] == nil {
-		log.Printf("Error while parsing (567).")
+		err := fmt.Errorf("the third metadata section element doesn't exist")
+		fmt.Fprintf(os.Stderr, errMsg, body[:10], err)
 		return MetadataResponse{} // TODO handle error
 	}
 
 	var data2 [][][]interface{}
 	if err := json.Unmarshal([]byte(d[2].(string)), &data2); err != nil {
-		log.Printf("Error while trying to unmarshal gp metadata (2): %q", err.Error())
+		err := fmt.Errorf("unmarshal gp metadata: %v", err)
+		fmt.Fprintf(os.Stderr, errMsg, body[:10], err)
 		return MetadataResponse{} // TODO handle error
 	}
 
@@ -294,9 +311,10 @@ func parseGpMetadata(body []byte) MetadataResponse {
 }
 
 func parseAsStory(body []byte) StoryResponse {
+	const errMsg = "[ERR] scraper.parseAsStory(%s...): %v\n"
 	var data Page
 	if err := json.Unmarshal(body, &data); err != nil {
-		log.Printf("Error while trying to unmarshal as story (1): %q", err.Error())
+		fmt.Fprintf(os.Stderr, errMsg, body[:10], err)
 		return StoryResponse{} // TODO handle error
 	}
 
