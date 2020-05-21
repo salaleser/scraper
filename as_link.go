@@ -1,9 +1,11 @@
 package scraper
 
 type Link struct {
-	URL       string `json:"url"`
-	KindID    string `json:"kindId"`
-	Type      string `json:"type"`
-	KindIds   []int  `json:"kindIds"`
 	ContentID string `json:"contentId"`
+	KindID    string `json:"kindId"`
+	KindIDs   []int  `json:"kindIds"`
+	Label     string `json:"label"`
+	Target    string `json:"target"`
+	Type      string `json:"type"`
+	URL       string `json:"url"`
 }
