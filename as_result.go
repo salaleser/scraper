@@ -9,7 +9,7 @@ type Result struct {
 	BundleID                               string                   `json:"bundleId"`
 	Canvas                                 Canvas                   `json:"canvas"`
 	CardDisplayStyle                       string                   `json:"cardDisplayStyle"`
-	CardIds                                []string                 `json:"cardIds"`
+	CardIDs                                []string                 `json:"cardIds"`
 	ChartPositionForStore                  map[string]ChartPosition `json:"chartPositionForStore"`
 	СircularArtwork                        Artwork                  `json:"circularArtwork"`
 	ContentRatingsBySystem                 ContentRatingsBySystem   `json:"contentRatingsBySystem"`

@@ -17,20 +17,20 @@ const asProxyURL = "http://176.9.112.168:5005"
 
 var debug = false
 
-// AsStory returns a Story by its ID.
-func AsStory(storyID string, cc string, l string) StoryResponse {
-	const errMsg = "[ERR] scraper.AsStory(%s,%s,%s): %v\n"
-	const baseURL = "https://apps.apple.com/%s/story/id%s"
+// Story returns a Story by its ID.
+func Story(storyID int, cc string, l string) (Page, error) {
+	const errMsg = "[ERR] scraper.AsStory(%d,%s,%s): %v\n"
+	const baseURL = "https://apps.apple.com/%s/story/id%d"
 	uri, err := url.Parse(fmt.Sprintf(baseURL, cc, storyID))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, errMsg, storyID, cc, l, err)
-		return StoryResponse{}
+		return Page{}, nil
 	}
 
 	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, errMsg, storyID, cc, l, err)
-		return StoryResponse{}
+		return Page{}, nil
 	}
 	query.Add("cc", cc)
 	uri.RawQuery = query.Encode()
@@ -45,20 +45,30 @@ func AsStory(storyID string, cc string, l string) StoryResponse {
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, errMsg, storyID, cc, l, err)
-		return StoryResponse{}
+		return Page{}, nil
+	}
+
+	if resp.StatusCode != 200 {
+		return Page{}, errors.New(resp.Status)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, errMsg, storyID, cc, l, err)
-		return StoryResponse{}
+		return Page{}, nil
 	}
 
-	return parseAsStory(body)
+	page, err := ParsePage(body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, errMsg, storyID, cc, l, err)
+		return Page{}, err
+	}
+
+	return page, nil
 }
 
-// AsSuggestions returns suggestions by a keyword.
-func AsSuggestions(keyword string, cc string, l string) []byte {
+// Suggestions returns suggestions by a keyword.
+func Suggestions(keyword string, cc string, l string) []byte {
 	const errMsg = "[ERR] scraper.AsSuggestions(%s,%s,%s): %v\n"
 	const baseURL = "https://search.itunes.apple.com/WebObjects/MZSearchHints.woa/wa/hints"
 	uri, err := url.Parse(baseURL)
@@ -100,8 +110,8 @@ func AsSuggestions(keyword string, cc string, l string) []byte {
 	return body
 }
 
-// AsGenre returns App Store root page for Genre structure
-func AsGenre(id int, cc string) (Page, error) {
+// Genre returns App Store root page for Genre structure
+func Genre(id int, cc string) (Page, error) {
 	const errMsg = "[ERR] scraper.AsGenre(%d,%s): %v\n"
 	const baseURL = "https://itunes.apple.com/%s/genre"
 	uri, err := url.Parse(fmt.Sprintf(baseURL, cc))
@@ -144,14 +154,14 @@ func AsGenre(id int, cc string) (Page, error) {
 		return Page{}, err
 	}
 
+	if resp.StatusCode != 200 {
+		return Page{}, errors.New(resp.Status)
+	}
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, errMsg, id, cc, err)
 		return Page{}, err
-	}
-
-	if resp.StatusCode != 200 {
-		return Page{}, errors.New(resp.Status)
 	}
 
 	page, err := ParsePage(body)
@@ -163,8 +173,8 @@ func AsGenre(id int, cc string) (Page, error) {
 	return page, nil
 }
 
-// AsGrouping returns App Store root page for Grouping structure
-func AsGrouping(id int, cc string, l string) (Page, error) {
+// Grouping returns App Store root page for Grouping structure
+func Grouping(id int, cc string, l string) (Page, error) {
 	const errMsg = "[ERR] scraper.AsGrouping(%d,%s,%s): %v\n"
 	const baseURL = "http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewGrouping"
 	uri, err := url.Parse(baseURL)
@@ -208,14 +218,14 @@ func AsGrouping(id int, cc string, l string) (Page, error) {
 		return Page{}, err
 	}
 
+	if resp.StatusCode != 200 {
+		return Page{}, errors.New(resp.Status)
+	}
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, errMsg, id, cc, l, err)
 		return Page{}, err
-	}
-
-	if resp.StatusCode != 200 {
-		return Page{}, errors.New(resp.Status)
 	}
 
 	page, err := ParsePage(body)
@@ -227,22 +237,22 @@ func AsGrouping(id int, cc string, l string) (Page, error) {
 	return page, nil
 }
 
-// AsRoom returns a Room by its ID.
-func AsRoom(adamID string, cc string, l string) RoomResponse {
-	const errMsg = "[ERR] scraper.AsRoom(%s,%s,%s): %v\n"
+// Room returns a Room by its ID.
+func Room(fcID int, cc string, l string) (Page, error) {
+	const errMsg = "[ERR] scraper.AsRoom(%d,%s,%s): %v\n"
 	const baseURL = "https://itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, adamID, cc, l, err)
-		return RoomResponse{}
+		fmt.Fprintf(os.Stderr, errMsg, fcID, cc, l, err)
+		return Page{}, err
 	}
 
 	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, adamID, cc, l, err)
-		return RoomResponse{}
+		fmt.Fprintf(os.Stderr, errMsg, fcID, cc, l, err)
+		return Page{}, err
 	}
-	query.Add("fcId", adamID)
+	query.Add("fcId", strconv.Itoa(fcID))
 	// query.Add("genreIdString", "6014")                           // TODO изучить
 	// query.Add("mediaTypeString", "Mobile+Software+Applications") // TODO изучить
 	uri.RawQuery = query.Encode()
@@ -256,21 +266,31 @@ func AsRoom(adamID string, cc string, l string) RoomResponse {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, adamID, cc, l, err)
-		return RoomResponse{}
+		fmt.Fprintf(os.Stderr, errMsg, fcID, cc, l, err)
+		return Page{}, err
+	}
+
+	if resp.StatusCode != 200 {
+		return Page{}, errors.New(resp.Status)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, adamID, cc, l, err)
-		return RoomResponse{}
+		fmt.Fprintf(os.Stderr, errMsg, fcID, cc, l, err)
+		return Page{}, err
 	}
 
-	return parseAsRoom(body[:])
+	page, err := ParsePage(body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, errMsg, fcID, cc, l, err)
+		return Page{}, err
+	}
+
+	return page, nil
 }
 
-// AsAppIDs returns application IDs by a keyword.
-func AsAppIDs(keyword string, cc string, l string) []MetadataResponse {
+// AppIDs returns application IDs by a keyword.
+func AppIDs(keyword string, cc string, l string) []MetadataResponse {
 	const errMsg = "[ERR] scraper.AsAppIDs(%s,%s,%s): %v\n"
 	const baseURL = "https://search.itunes.apple.com/WebObjects/MZStore.woa/wa/search"
 	uri, err := url.Parse(baseURL)
@@ -312,8 +332,8 @@ func AsAppIDs(keyword string, cc string, l string) []MetadataResponse {
 	return parseAsIDs(body)
 }
 
-// AsMetadata returns an Application's metadata by its ID.
-func AsMetadata(appID string, cc string, l string) MetadataResponse {
+// Metadata returns an Application's metadata by its ID.
+func Metadata(appID string, cc string, l string) MetadataResponse {
 	const errMsg = "[ERR] scraper.AsMetadata(%s,%s,%s): %v\n"
 	const baseURLpart = "https://apps.apple.com/%s/app/id%s"
 	uri, err := url.Parse(fmt.Sprintf(baseURLpart, cc, appID))

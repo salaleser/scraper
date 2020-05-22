@@ -23,36 +23,6 @@ type MetadataResponse struct { // TODO add more fields
 	Logo        string
 }
 
-// StoryResponse is a vitalina's Story structure.
-type StoryResponse struct {
-	Canvas           Canvas
-	Label            string
-	ID               string
-	CardIds          []string
-	RelatedContent   map[string]Result
-	EditorialArtwork map[string]Artwork
-	Kind             string
-	Link             Link
-	DisplayStyle     string
-	EditorialNotes   EditorialNotes
-	CardDisplayStyle string
-	DisplaySubStyle  string
-}
-
-// RoomResponse is a vitalina's Room structure.
-type RoomResponse struct {
-	Title       string
-	Link        string
-	AppID       string
-	ArtistName  string
-	Rating      float32
-	ReleaseDate string
-	Subtitle    string
-	Description string
-	Screenshot1 string // TODO add array
-	Logo        string
-}
-
 func parseAsIDs(body []byte) []MetadataResponse {
 	const errMsg = "[ERR] scraper.parseAsIDs(%s...): %v\n"
 	var data Page
@@ -124,42 +94,6 @@ func ParsePage(body []byte) (Page, error) {
 	}
 
 	return page, nil
-}
-
-func parseAsRoom(body []byte) RoomResponse {
-	const errMsg = "[ERR] scraper.parseAsRoom(%s...): %v\n"
-	var data Page
-	if err := json.Unmarshal(body, &data); err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, body[:10], err)
-		return RoomResponse{}
-	}
-
-	var room RoomResponse
-	for _, result := range data.StorePlatformData["lockup"].Results {
-		var screenshot1 string
-		for _, screenshots := range result.ScreenshotsByType {
-			if len(screenshots) == 0 {
-				continue
-			}
-
-			screenshot1 = strings.Replace(screenshots[0].URL, "{w}x{h}bb.{f}", "512x512bb.png", -1)
-		}
-
-		room = RoomResponse{
-			AppID:       result.ID,
-			Link:        result.Link.URL,
-			ArtistName:  result.ArtistName,
-			Rating:      result.UserRating.Value,
-			ReleaseDate: result.ReleaseDate,
-			Title:       result.Name,
-			Subtitle:    result.Subtitle,
-			Description: result.Description.Standard,
-			Screenshot1: screenshot1,
-			Logo:        strings.Replace(result.Artwork.URL, "{w}x{h}bb.{f}", "128x128bb.png", -1),
-		}
-	}
-
-	return room
 }
 
 func parseGpIDs(body []byte) []MetadataResponse {
@@ -307,35 +241,5 @@ func parseGpMetadata(body []byte) MetadataResponse {
 		Description: data2[0][10][0].([]interface{})[1].(string),
 		Screenshot1: data2[0][12][0].([]interface{})[0].([]interface{})[3].([]interface{})[2].(string),
 		Logo:        data2[0][12][1].([]interface{})[3].([]interface{})[2].(string),
-	}
-}
-
-func parseAsStory(body []byte) StoryResponse {
-	const errMsg = "[ERR] scraper.parseAsStory(%s...): %v\n"
-	var data Page
-	if err := json.Unmarshal(body, &data); err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, body[:10], err)
-		return StoryResponse{} // TODO handle error
-	}
-
-	var result Result
-	for _, v := range data.StorePlatformData["editorial-item-product"].Results {
-		result = v
-		break
-	}
-
-	return StoryResponse{
-		Canvas:           result.Canvas,
-		Label:            result.Label,
-		ID:               result.ID,
-		CardIds:          result.CardIds,
-		RelatedContent:   result.RelatedContent,
-		EditorialArtwork: result.EditorialArtwork,
-		Kind:             result.Kind,
-		Link:             result.Link,
-		DisplayStyle:     result.DisplayStyle,
-		EditorialNotes:   result.EditorialNotes,
-		CardDisplayStyle: result.CardDisplayStyle,
-		DisplaySubStyle:  result.DisplaySubStyle,
 	}
 }
