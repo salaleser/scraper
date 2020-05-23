@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 )
 
 // MetadataResponse is a vitalina's Application's metadata structure.
@@ -47,42 +46,6 @@ func parseAsIDs(body []byte) []MetadataResponse {
 	}
 
 	return metadatas
-}
-
-func parseAsMetadata(body []byte) MetadataResponse {
-	const errMsg = "[ERR] scraper.parseAsMetadata(%s...): %v\n"
-	var data Page
-	if err := json.Unmarshal(body, &data); err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, body[:10], err)
-		return MetadataResponse{}
-	}
-
-	var metadata MetadataResponse
-	for _, result := range data.StorePlatformData["product-dv"].Results {
-		var screenshot1 string
-		for _, screenshots := range result.ScreenshotsByType {
-			if len(screenshots) == 0 {
-				continue
-			}
-
-			screenshot1 = strings.Replace(screenshots[0].URL, "{w}x{h}bb.{f}", "512x512bb.png", -1)
-		}
-
-		metadata = MetadataResponse{
-			AppID:       result.ID,
-			Link:        result.URL,
-			ArtistName:  result.ArtistName,
-			Rating:      result.UserRating.Value,
-			ReleaseDate: result.ReleaseDate,
-			Title:       result.Name,
-			Subtitle:    result.Subtitle,
-			Description: result.Description.Standard,
-			Screenshot1: screenshot1,
-			Logo:        strings.Replace(result.Artwork.URL, "{w}x{h}bb.{f}", "128x128bb.png", -1),
-		}
-	}
-
-	return metadata
 }
 
 // ParsePage parses App Store root page and returns structure

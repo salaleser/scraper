@@ -12,14 +12,13 @@ import (
 )
 
 const asUserAgent = "AppStore/3.0 iOS/11.1.1 model/iPhone6,2 hwp/s5l8960x build/15B150 (6; dt:90)"
-const asStoreFront = "143469-16,29 t:apps3"
 const asProxyURL = "http://176.9.112.168:5005"
 
 var debug = false
 
 // Story returns a Story by its ID.
 func Story(storyID int, cc string, l string) (Page, error) {
-	const errMsg = "[ERR] scraper.AsStory(%d,%s,%s): %v\n"
+	const errMsg = "[ERR] scraper.Story(%d,%s,%s): %v\n"
 	const baseURL = "https://apps.apple.com/%s/story/id%d"
 	uri, err := url.Parse(fmt.Sprintf(baseURL, cc, storyID))
 	if err != nil {
@@ -35,7 +34,7 @@ func Story(storyID int, cc string, l string) (Page, error) {
 	query.Add("cc", cc)
 	uri.RawQuery = query.Encode()
 
-	storeFront := buildStoreFront(cc, l)
+	storeFront := BuildStoreFront(cc, l)
 
 	req, err := http.NewRequest("GET", uri.String(), nil)
 	req.Header.Add("x-apple-store-front", storeFront)
@@ -69,7 +68,7 @@ func Story(storyID int, cc string, l string) (Page, error) {
 
 // Suggestions returns suggestions by a keyword.
 func Suggestions(keyword string, cc string, l string) []byte {
-	const errMsg = "[ERR] scraper.AsSuggestions(%s,%s,%s): %v\n"
+	const errMsg = "[ERR] scraper.Suggestions(%s,%s,%s): %v\n"
 	const baseURL = "https://search.itunes.apple.com/WebObjects/MZSearchHints.woa/wa/hints"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
@@ -88,7 +87,7 @@ func Suggestions(keyword string, cc string, l string) []byte {
 	query.Add("term", keyword)
 	uri.RawQuery = query.Encode()
 
-	storeFront := buildStoreFront(cc, l)
+	storeFront := BuildStoreFront(cc, l)
 
 	req, err := http.NewRequest("GET", uri.String(), nil)
 	req.Header.Add("x-apple-store-front", storeFront)
@@ -112,7 +111,7 @@ func Suggestions(keyword string, cc string, l string) []byte {
 
 // Genre returns App Store root page for Genre structure
 func Genre(id int, cc string) (Page, error) {
-	const errMsg = "[ERR] scraper.AsGenre(%d,%s): %v\n"
+	const errMsg = "[ERR] scraper.Genre(%d,%s): %v\n"
 	const baseURL = "https://itunes.apple.com/%s/genre"
 	uri, err := url.Parse(fmt.Sprintf(baseURL, cc))
 	if err != nil {
@@ -128,7 +127,7 @@ func Genre(id int, cc string) (Page, error) {
 	query.Add("id", strconv.Itoa(id))
 	uri.RawQuery = query.Encode()
 
-	storeFront := buildStoreFront(cc, "")
+	storeFront := BuildStoreFront(cc, "")
 
 	req, err := http.NewRequest("GET", uri.String(), nil)
 	req.Header.Add("x-apple-store-front", storeFront)
@@ -175,7 +174,7 @@ func Genre(id int, cc string) (Page, error) {
 
 // Grouping returns App Store root page for Grouping structure
 func Grouping(id int, cc string, l string) (Page, error) {
-	const errMsg = "[ERR] scraper.AsGrouping(%d,%s,%s): %v\n"
+	const errMsg = "[ERR] scraper.Grouping(%d,%s,%s): %v\n"
 	const baseURL = "http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewGrouping"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
@@ -192,7 +191,7 @@ func Grouping(id int, cc string, l string) (Page, error) {
 	query.Add("id", strconv.Itoa(id))
 	uri.RawQuery = query.Encode()
 
-	storeFront := buildStoreFront(cc, l)
+	storeFront := BuildStoreFront(cc, l)
 
 	req, err := http.NewRequest("GET", uri.String(), nil)
 	req.Header.Add("x-apple-store-front", storeFront)
@@ -239,7 +238,7 @@ func Grouping(id int, cc string, l string) (Page, error) {
 
 // Room returns a Room by its ID.
 func Room(fcID int, cc string, l string) (Page, error) {
-	const errMsg = "[ERR] scraper.AsRoom(%d,%s,%s): %v\n"
+	const errMsg = "[ERR] scraper.Room(%d,%s,%s): %v\n"
 	const baseURL = "https://itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
@@ -257,7 +256,7 @@ func Room(fcID int, cc string, l string) (Page, error) {
 	// query.Add("mediaTypeString", "Mobile+Software+Applications") // TODO изучить
 	uri.RawQuery = query.Encode()
 
-	storeFront := buildStoreFront(cc, l)
+	storeFront := BuildStoreFront(cc, l)
 
 	req, err := http.NewRequest("GET", uri.String(), nil)
 	req.Header.Add("x-apple-store-front", storeFront)
@@ -289,6 +288,55 @@ func Room(fcID int, cc string, l string) (Page, error) {
 	return page, nil
 }
 
+// App returns an application's metadata by its ID.
+func App(appID int, cc string, l string) (Page, error) {
+	const errMsg = "[ERR] scraper.App(%d,%s,%s): %v\n"
+	const baseURL = "https://apps.apple.com/%s/app/id%d"
+	uri, err := url.Parse(fmt.Sprintf(baseURL, cc, appID))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, errMsg, appID, cc, l, err)
+		return Page{}, err
+	}
+
+	query, err := url.ParseQuery(uri.RawQuery)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, errMsg, appID, cc, l, err)
+		return Page{}, err
+	}
+	uri.RawQuery = query.Encode()
+
+	storeFront := BuildStoreFront(cc, l)
+
+	req, err := http.NewRequest("GET", uri.String(), nil)
+	req.Header.Add("x-apple-store-front", storeFront)
+	req.Header.Add("user-agent", asUserAgent)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, errMsg, appID, cc, l, err)
+		return Page{}, err
+	}
+
+	if resp.StatusCode != 200 {
+		return Page{}, errors.New(resp.Status)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, errMsg, appID, cc, l, err)
+		return Page{}, err
+	}
+
+	page, err := ParsePage(body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, errMsg, appID, cc, l, err)
+		return Page{}, err
+	}
+
+	return page, nil
+}
+
 // AppIDs returns application IDs by a keyword.
 func AppIDs(keyword string, cc string, l string) []MetadataResponse {
 	const errMsg = "[ERR] scraper.AsAppIDs(%s,%s,%s): %v\n"
@@ -310,7 +358,7 @@ func AppIDs(keyword string, cc string, l string) []MetadataResponse {
 	query.Add("term", keyword)
 	uri.RawQuery = query.Encode()
 
-	storeFront := buildStoreFront(cc, l)
+	storeFront := BuildStoreFront(cc, l)
 
 	req, err := http.NewRequest("GET", uri.String(), nil)
 	req.Header.Add("x-apple-store-front", storeFront)
@@ -330,45 +378,6 @@ func AppIDs(keyword string, cc string, l string) []MetadataResponse {
 	}
 
 	return parseAsIDs(body)
-}
-
-// Metadata returns an Application's metadata by its ID.
-func Metadata(appID string, cc string, l string) MetadataResponse {
-	const errMsg = "[ERR] scraper.AsMetadata(%s,%s,%s): %v\n"
-	const baseURLpart = "https://apps.apple.com/%s/app/id%s"
-	uri, err := url.Parse(fmt.Sprintf(baseURLpart, cc, appID))
-	if err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, appID, cc, l, err)
-		return MetadataResponse{}
-	}
-
-	query, err := url.ParseQuery(uri.RawQuery)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, appID, cc, l, err)
-		return MetadataResponse{}
-	}
-	uri.RawQuery = query.Encode()
-
-	storeFront := buildStoreFront(cc, l)
-
-	req, err := http.NewRequest("GET", uri.String(), nil)
-	req.Header.Add("x-apple-store-front", storeFront)
-	req.Header.Add("user-agent", asUserAgent)
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, appID, cc, l, err)
-		return MetadataResponse{}
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, appID, cc, l, err)
-		return MetadataResponse{}
-	}
-
-	return parseAsMetadata(body)
 }
 
 // GpAppIDs returns application IDs by a keyword.
