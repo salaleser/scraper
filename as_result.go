@@ -39,6 +39,7 @@ type Result struct {
 	OvalArtwork                            Artwork                  `json:"ovalArtwork"`
 	ReleaseDate                            string                   `json:"releaseDate"`
 	RelatedContent                         map[string]Result        `json:"relatedContent"`
+	RelatedEditorialItems                  []string                 `json:"relatedEditorialItems"`
 	RequiredCapabilities                   string                   `json:"requiredCapabilities"`
 	ScreenshotsByType                      map[string][]Artwork     `json:"screenshotsByType"`
 	ShortURL                               string                   `json:"shortUrl"`
