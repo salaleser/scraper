@@ -1,6 +1,7 @@
 package scraper
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -279,7 +280,20 @@ func Room(fcID int, cc string, l string) (Page, error) {
 		return Page{}, err
 	}
 
-	page, err := ParsePage(body)
+	var page Page
+
+	// TODO проверку на adamIds []string улучшить
+	var adamIDsIsTypeOfStringArray bool
+	err = json.Unmarshal(body, &page)
+	if err != nil {
+		adamIDsIsTypeOfStringArray = true
+	}
+
+	if adamIDsIsTypeOfStringArray {
+		page, err = ParsePageAdamIDsString(body)
+	} else {
+		page, err = ParsePage(body)
+	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, errMsg, fcID, cc, l, err)
 		return Page{}, err

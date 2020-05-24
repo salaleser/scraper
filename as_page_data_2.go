@@ -1,9 +1,10 @@
 package scraper
 
+// PageData2 это костыль для конвертации appIds []string в []int.
 // !!! в Room adamIds может быть []string или []int
-type PageData struct {
+type PageData2 struct {
 	AdamID                    int                       `json:"adamId"`
-	AdamIDs                   []int                     `json:"adamIds"`
+	AdamIDs                   []string                  `json:"adamIds"`
 	AllCategoriesLink         AllCategoriesLink         `json:"allCategoriesLink"`
 	AppRatingsLearnMoreURL    string                    `json:"appRatingsLearnMoreUrl"`
 	Bubbles                   Bubbles                   `json:"bubbles"`
