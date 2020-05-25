@@ -49,7 +49,7 @@ func parseAsIDs(body []byte) []MetadataResponse {
 	return metadatas
 }
 
-// ParsePage parses App Store root page and returns structure
+// ParsePage parses App Store root page and returns structure.
 func ParsePage(body []byte) (Page, error) {
 	var page Page
 	err := json.Unmarshal(body, &page)
