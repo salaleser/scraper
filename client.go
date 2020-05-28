@@ -17,19 +17,19 @@ const asProxyURL = "http://176.9.112.168:5005"
 
 var debug = false
 
-// Story returns a Story by its ID.
-func Story(storyID int, cc string, l string) (Page, error) {
+// Story returns a Story by ID id.
+func Story(id int, cc string, l string) (Page, error) {
 	const errMsg = "[ERR] scraper.Story(%d,%s,%s): %v\n"
 	const baseURL = "https://apps.apple.com/%s/story/id%d"
-	uri, err := url.Parse(fmt.Sprintf(baseURL, cc, storyID))
+	uri, err := url.Parse(fmt.Sprintf(baseURL, cc, id))
 	if err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, storyID, cc, l, err)
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, l, err)
 		return Page{}, nil
 	}
 
 	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, storyID, cc, l, err)
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, l, err)
 		return Page{}, nil
 	}
 	query.Add("cc", cc)
@@ -44,7 +44,7 @@ func Story(storyID int, cc string, l string) (Page, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, storyID, cc, l, err)
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, l, err)
 		return Page{}, nil
 	}
 
@@ -54,13 +54,13 @@ func Story(storyID int, cc string, l string) (Page, error) {
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, storyID, cc, l, err)
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, l, err)
 		return Page{}, nil
 	}
 
 	page, err := ParsePage(body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, storyID, cc, l, err)
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, l, err)
 		return Page{}, err
 	}
 
@@ -302,19 +302,19 @@ func Room(fcID int, cc string, l string) (Page, error) {
 	return page, nil
 }
 
-// App returns an application's metadata by its ID.
-func App(appID int, cc string, l string) (Page, error) {
+// App returns an application by ID id.
+func App(id int, cc string, l string) (Page, error) {
 	const errMsg = "[ERR] scraper.App(%d,%s,%s): %v\n"
 	const baseURL = "https://apps.apple.com/%s/app/id%d"
-	uri, err := url.Parse(fmt.Sprintf(baseURL, cc, appID))
+	uri, err := url.Parse(fmt.Sprintf(baseURL, cc, id))
 	if err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, appID, cc, l, err)
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, l, err)
 		return Page{}, err
 	}
 
 	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, appID, cc, l, err)
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, l, err)
 		return Page{}, err
 	}
 	uri.RawQuery = query.Encode()
@@ -328,7 +328,7 @@ func App(appID int, cc string, l string) (Page, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, appID, cc, l, err)
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, l, err)
 		return Page{}, err
 	}
 
@@ -338,13 +338,62 @@ func App(appID int, cc string, l string) (Page, error) {
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, appID, cc, l, err)
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, l, err)
 		return Page{}, err
 	}
 
 	page, err := ParsePage(body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, appID, cc, l, err)
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, l, err)
+		return Page{}, err
+	}
+
+	return page, nil
+}
+
+// Bundle returns a bundle by ID id.
+func Bundle(id int, cc string, l string) (Page, error) {
+	const errMsg = "[ERR] scraper.Bundle(%d,%s,%s): %v\n"
+	const baseURL = "https://apps.apple.com/%s/app-bundle/id%d"
+	uri, err := url.Parse(fmt.Sprintf(baseURL, cc, id))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, l, err)
+		return Page{}, err
+	}
+
+	query, err := url.ParseQuery(uri.RawQuery)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, l, err)
+		return Page{}, err
+	}
+	uri.RawQuery = query.Encode()
+
+	storeFront := BuildStoreFront(cc, l)
+
+	req, err := http.NewRequest("GET", uri.String(), nil)
+	req.Header.Add("x-apple-store-front", storeFront)
+	req.Header.Add("user-agent", asUserAgent)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, l, err)
+		return Page{}, err
+	}
+
+	if resp.StatusCode != 200 {
+		return Page{}, errors.New(resp.Status)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, l, err)
+		return Page{}, err
+	}
+
+	page, err := ParsePage(body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, errMsg, id, cc, l, err)
 		return Page{}, err
 	}
 
