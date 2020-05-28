@@ -11,6 +11,8 @@ type Result struct {
 	CardDisplayStyle                       string                   `json:"cardDisplayStyle"`
 	CardIDs                                []string                 `json:"cardIds"`
 	ChartPositionForStore                  map[string]ChartPosition `json:"chartPositionForStore"`
+	Children                               map[string]Result        `json:"children"`
+	ChildrenIDs                            []string                 `json:"childrenIds"`
 	СircularArtwork                        Artwork                  `json:"circularArtwork"`
 	ContentRatingsBySystem                 ContentRatingsBySystem   `json:"contentRatingsBySystem"`
 	Copyright                              string                   `json:"copyright"`
