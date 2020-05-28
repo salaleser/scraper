@@ -58,6 +58,7 @@ var StoreFronts = map[string]int{
 	"JP": 143462,
 	"JO": 143528,
 	"KE": 143529,
+	"KZ": 143517,
 	"KW": 143493,
 	"LV": 143519,
 	"LB": 143497,
