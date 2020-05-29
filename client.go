@@ -482,19 +482,19 @@ func GpAppIDs(keyword string, gl string, hl string) []MetadataResponse {
 	return parseGpIDs(body[5:])
 }
 
-// GpMetadata returns an Application's metadata by its ID.
-func GpMetadata(appID string, gl string, hl string) MetadataResponse {
-	const errMsg = "[ERR] scraper.GpMetadata(%s,%s,%s): %v\n"
+// AppGp returns an Application's metadata by ID packageName.
+func AppGp(packageName string, gl string, hl string) MetadataResponse {
+	const errMsg = "[ERR] scraper.AppGp(%s,%s,%s): %v\n"
 	const baseURL = "https://play.google.com/_/PlayStoreUi/data/batchexecute"
 	uri, err := url.Parse(baseURL)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, appID, gl, hl, err)
+		fmt.Fprintf(os.Stderr, errMsg, packageName, gl, hl, err)
 		return MetadataResponse{}
 	}
 
 	query, err := url.ParseQuery(uri.RawQuery)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, appID, gl, hl, err)
+		fmt.Fprintf(os.Stderr, errMsg, packageName, gl, hl, err)
 		return MetadataResponse{}
 	}
 	query.Add("gl", gl)
@@ -507,20 +507,21 @@ func GpMetadata(appID string, gl string, hl string) MetadataResponse {
 	// v5 := fmt.Sprintf("[k8610b,'[[null,[%s,7]]]',null,%s]", appID, appID) // short rating
 	// v6 := fmt.Sprintf("[BQ0Ly,'[[null,[%s,7]]]',null,%s]", appID, appID)  // downloads
 
-	value := fmt.Sprintf("[[[jLZZ2e,'[[%s,7],2]',null,%s]]]", appID, appID) // ASO
+	value := fmt.Sprintf("[[[jLZZ2e,'[[%s,7],2]',null,%s]]]",
+		packageName, packageName)
 
 	data := url.Values{}
 	data.Add("f.req", value)
 
 	resp, err := http.PostForm(baseURL, data)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, appID, gl, hl, err)
+		fmt.Fprintf(os.Stderr, errMsg, packageName, gl, hl, err)
 		return MetadataResponse{}
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, errMsg, appID, gl, hl, err)
+		fmt.Fprintf(os.Stderr, errMsg, packageName, gl, hl, err)
 		return MetadataResponse{}
 	}
 
