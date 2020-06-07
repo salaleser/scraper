@@ -39,7 +39,7 @@ message AppStoreRoomReply {
 	uint32 fc_kind = 12;
 
 	uint32 store_front = 13;
-	uint32 language = 14;
+	uint32 language_id = 14;
 }
 
 message GooglePlayAppRequest {

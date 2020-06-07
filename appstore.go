@@ -42,7 +42,7 @@ func (s *server) AppStoreRoom(ctx context.Context, in *pb.AppStoreRoomRequest) (
 		Id:         uint32(data.PageData.AdamID),
 		FcKind:     uint32(fcKind),
 		StoreFront: uint32(storeFront),
-		Language:   uint32(language),
+		LanguageId: uint32(language),
 		Title:      data.PageData.PageTitle,
 		ContentIds: contentIDs,
 	}, nil
