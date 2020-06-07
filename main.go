@@ -2,9 +2,12 @@ package scraper
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
+	"os"
 
+	as "github.com/salaleser/appstoreapi"
 	pb "github.com/salaleser/scraper/scraper"
 	"google.golang.org/grpc"
 )
@@ -15,9 +18,18 @@ type server struct {
 
 func (s *server) Room(ctx context.Context, in *pb.RoomRequest) (*pb.RoomReply, error) {
 	log.Printf("Received: %v", in.GetId())
-	// _, _ = as.Room(in.GetId(), in.Country, in.Language)
+	data, err := as.Room(in.GetId(), in.Country, in.Language)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v", err)
+	}
 
-	return &pb.RoomReply{}, nil
+	return &pb.RoomReply{
+		Data: &pb.Data{
+			PageData: &pb.PageData{
+				AdamId: uint32(data.PageData.AdamID),
+			},
+		},
+	}, nil
 }
 
 func main() {
