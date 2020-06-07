@@ -15,6 +15,7 @@ func (s *server) GooglePlayApp(ctx context.Context, in *pb.GooglePlayAppRequest)
 	data, err := api.App(in.GetPackageName(), in.GeoLocation, in.HumanLanguage)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "scraper gp app: %v", err)
+		return &pb.GooglePlayAppReply{}, err
 	}
 
 	return &pb.GooglePlayAppReply{

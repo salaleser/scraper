@@ -16,6 +16,7 @@ func (s *server) AppStoreRoom(ctx context.Context, in *pb.AppStoreRoomRequest) (
 	data, err := api.Room(in.GetId(), in.CountryCode, in.Language)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "scraper as room: %v", err)
+		return &pb.AppStoreRoomReply{}, err
 	}
 
 	contentIDs := make([]uint32, 0)
