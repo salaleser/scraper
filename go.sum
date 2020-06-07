@@ -33,10 +33,14 @@ github.com/salaleser/appstoreapi v0.0.0-20200607000511-b9d4f6b1130d h1:bzjn65WE2
 github.com/salaleser/appstoreapi v0.0.0-20200607000511-b9d4f6b1130d/go.mod h1:L7p99MBN4haKSeCZ6tIG6KAL7ggR0HNnV1fZxUehe9w=
 github.com/salaleser/appstoreapi v0.0.0-20200607155704-f2aebccfadf6 h1:N997nVeZgnvAS77b5DLGa9CJBc98HP2//a/HKg45ycA=
 github.com/salaleser/appstoreapi v0.0.0-20200607155704-f2aebccfadf6/go.mod h1:L7p99MBN4haKSeCZ6tIG6KAL7ggR0HNnV1fZxUehe9w=
+github.com/salaleser/appstoreapi v0.0.0-20200607164202-20213fa0cf15 h1:4ABNPg4RN/IcGo81h3kfnHxHNwW0UFrMf8rMPUovPN8=
+github.com/salaleser/appstoreapi v0.0.0-20200607164202-20213fa0cf15/go.mod h1:L7p99MBN4haKSeCZ6tIG6KAL7ggR0HNnV1fZxUehe9w=
 github.com/salaleser/googleplayapi v0.0.0-20200607104641-74c262147154 h1:fNuY3hTboOVMtx459NVBCaekO51PO36k6HM5SeHeUUo=
 github.com/salaleser/googleplayapi v0.0.0-20200607104641-74c262147154/go.mod h1:FY5ZS5gwTZ+fuXQgY+5UjZJdOpCjnMIIfAh4/e7AET4=
 github.com/salaleser/googleplayapi v0.0.0-20200607155510-2b6aa79bfdb1 h1:KIm2dG8pcCeWtw8gOZCYuJjtHQ3g9cerdIiUJRmFd3A=
 github.com/salaleser/googleplayapi v0.0.0-20200607155510-2b6aa79bfdb1/go.mod h1:FY5ZS5gwTZ+fuXQgY+5UjZJdOpCjnMIIfAh4/e7AET4=
+github.com/salaleser/googleplayapi v0.0.0-20200607163911-1274ee86bd87 h1:DkDCl50AM9Q9VXIS9e6PX2bpd6TAnhf588k/aEXkEeQ=
+github.com/salaleser/googleplayapi v0.0.0-20200607163911-1274ee86bd87/go.mod h1:FY5ZS5gwTZ+fuXQgY+5UjZJdOpCjnMIIfAh4/e7AET4=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/exp v0.0.0-20190121172915-509febef88a4/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
 golang.org/x/lint v0.0.0-20181026193005-c67002cb31c3/go.mod h1:UVdnD1Gm6xHRNCYTkRU2/jEulfH38KcIWyp/GAMgvoE=

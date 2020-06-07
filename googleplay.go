@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"os"
 
 	api "github.com/salaleser/googleplayapi"
 	pb "github.com/salaleser/scraper/scraper"
@@ -10,10 +12,10 @@ import (
 
 func (s *server) GooglePlayApp(ctx context.Context, in *pb.GooglePlayAppRequest) (*pb.GooglePlayAppReply, error) {
 	log.Printf("Received: %v\n", in.GetPackageName())
-	data := api.App(in.GetPackageName(), in.GeoLocation, in.HumanLanguage)
-	// if err != nil {
-	// 	fmt.Fprintf(os.Stderr, "scraper: %v", err)
-	// }
+	data, err := api.App(in.GetPackageName(), in.GeoLocation, in.HumanLanguage)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "scraper gp app: %v", err)
+	}
 
 	return &pb.GooglePlayAppReply{
 		PackageName: data.AppID,

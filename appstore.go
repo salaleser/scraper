@@ -15,7 +15,7 @@ func (s *server) AppStoreRoom(ctx context.Context, in *pb.AppStoreRoomRequest) (
 	log.Printf("Received: %v\n", in.GetId())
 	data, err := api.Room(in.GetId(), in.CountryCode, in.Language)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "scraper: %v", err)
+		fmt.Fprintf(os.Stderr, "scraper as room: %v", err)
 	}
 
 	contentIDs := make([]uint32, 0)
@@ -25,24 +25,24 @@ func (s *server) AppStoreRoom(ctx context.Context, in *pb.AppStoreRoomRequest) (
 
 	fcKind, err := strconv.Atoi(data.PageData.FcKind)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v", err)
+		fmt.Fprintf(os.Stderr, "error fc-kind: %v", err)
 	}
 
 	storeFront, err := strconv.Atoi(data.PageData.MetricsBase.StoreFront)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v", err)
+		fmt.Fprintf(os.Stderr, "error store-front: %v", err)
 	}
 
-	language, err := strconv.Atoi(data.PageData.MetricsBase.Language)
+	languageID, err := strconv.Atoi(data.PageData.MetricsBase.Language)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v", err)
+		fmt.Fprintf(os.Stderr, "error language-id: %v", err)
 	}
 
 	return &pb.AppStoreRoomReply{
 		Id:         uint32(data.PageData.AdamID),
 		FcKind:     uint32(fcKind),
 		StoreFront: uint32(storeFront),
-		LanguageId: uint32(language),
+		LanguageId: uint32(languageID),
 		Title:      data.PageData.PageTitle,
 		ContentIds: contentIDs,
 	}, nil
