@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	pb "github.com/salaleser/scraper/scraper"
+	pb "github.com/salaleser/scraper/proto"
 )
 
 func (s *server) Ping(ctx context.Context, in *pb.PingRequest) (*pb.PingReply, error) {

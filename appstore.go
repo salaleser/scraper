@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	api "github.com/salaleser/appstoreapi"
-	pb "github.com/salaleser/scraper/scraper"
+	pb "github.com/salaleser/scraper/proto"
 )
 
 func (s *server) AppStoreRoom(ctx context.Context, in *pb.AppStoreRoomRequest) (*pb.AppStoreRoomReply, error) {
