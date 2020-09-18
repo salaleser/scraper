@@ -7,7 +7,7 @@ import (
 	"os"
 
 	api "github.com/salaleser/googleplayapi"
-	pb "github.com/salaleser/scraper/scraper"
+	pb "github.com/salaleser/scraper/proto"
 )
 
 func (s *server) GooglePlayApp(ctx context.Context, in *pb.GooglePlayAppRequest) (*pb.GooglePlayAppReply, error) {
@@ -19,7 +19,14 @@ func (s *server) GooglePlayApp(ctx context.Context, in *pb.GooglePlayAppRequest)
 	}
 
 	return &pb.GooglePlayAppReply{
-		PackageName: data.AppID,
-		Title:       data.Title,
+		Rating:       data.Rating,
+		StarsCount:   data.StarsCount,
+		Stars_1Count: data.Stars1Count,
+		Stars_2Count: data.Stars2Count,
+		Stars_3Count: data.Stars3Count,
+		Stars_4Count: data.Stars4Count,
+		Stars_5Count: data.Stars5Count,
+		PackageName:  data.AppID,
+		Title:        data.Title,
 	}, nil
 }

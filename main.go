@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	pb "github.com/salaleser/scraper/scraper"
+	pb "github.com/salaleser/scraper/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 )
